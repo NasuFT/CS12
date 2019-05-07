@@ -3,8 +3,6 @@
 #include <vector>
 #include <algorithm>
 
-#define enable_debug
-
 #ifdef enable_debug
 #define D(x) x
 #else
@@ -478,9 +476,19 @@ public:
     }
 
     void next_team() {
-        do {
+        current_team = (current_team + 1) % teams.size();
+
+        while(teams[current_team].is_dead() || !teams[current_team].can_act()) {
+            if(!teams[current_team].can_act()) {
+                teams[current_team].skip();
+            }
+
             current_team = (current_team + 1) % teams.size();
-        } while(teams[current_team].is_dead());
+        }
+
+        while(!teams[current_team].can_current_player_act()) {
+            teams[current_team].next_player();
+        }
     }
 
     int get_dead_teams() {
@@ -581,15 +589,6 @@ public:
     }
 
     void get_input() {
-        while(!teams[current_team].can_act()) {
-            teams[current_team].skip();
-            next_team();
-        }
-
-        while(!teams[current_team].can_current_player_act()) {
-            teams[current_team].next_player();
-        }
-
         for(int i = 0; i < players[get_current_player() - 1]->get_actions_per_turn(); i++) {
             string command;
             cin >> command;
@@ -699,4 +698,4 @@ int main () {
     // cout << human.can_act() << '\n';
     // human.skip();
     // cout << human.can_act() << '\n';
-}
+}   
