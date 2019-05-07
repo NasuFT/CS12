@@ -3,8 +3,6 @@
 #include <vector>
 #include <algorithm>
 
-#define enable_debug
-
 #ifdef enable_debug
 #define D(x) x
 #else
@@ -478,7 +476,6 @@ public:
     }
 
     void next_team() {
-
         current_team = (current_team + 1) % teams.size();
 
         while(teams[current_team].is_dead() || !teams[current_team].can_act()) {
@@ -592,8 +589,6 @@ public:
     }
 
     void get_input() {
-       
-
         for(int i = 0; i < players[get_current_player() - 1]->get_actions_per_turn(); i++) {
             string command;
             cin >> command;
@@ -671,6 +666,8 @@ void execute_game() {
 
 int main () {
     execute_game();
+
+    // TESTING STUFF
 
     // Human human;
     // cout << human.get_number_of_hands() << '\n';
