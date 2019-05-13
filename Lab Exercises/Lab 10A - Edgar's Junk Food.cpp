@@ -8,16 +8,16 @@ using namespace std;
 
 // Top-Down Approach
 
-int *cache;
+double *cache;
 
-float take(float base_price, vector<int> *promo_bags, vector<float> *promo_cost, int bags) {
+double take(vector<int> *promo_bags, vector<double> *promo_costs, int bags) {
     if(bags < 1) return 0.0f;
     if(cache[bags - 1] != -1) return cache[bags - 1];
 
-    float min_cost = numeric_limits<float>::max();
+    double min_cost = numeric_limits<double>::max();
 
     for(unsigned int i = 0; i < promo_bags->size(); i++) {
-        min_cost = min(min_cost, promo_cost->at(i) + take(base_price, promo_bags, promo_cost, bags - promo_bags->at(i)));
+        min_cost = min(min_cost, promo_costs->at(i) + take(promo_bags, promo_costs, bags - promo_bags->at(i)));
     }
 
     cache[bags - 1] = min_cost;
@@ -25,46 +25,29 @@ float take(float base_price, vector<int> *promo_bags, vector<float> *promo_cost,
     return min_cost;
 }
 
-// Failed Bottom-up Approach
+// Bottom-up Approach
 
-// float take(float base_price, vector<int> promo_bags, vector<float> promo_cost, int bags) {
-//     vector<float> cache(bags);
-//     fill(cache.begin(), cache.end(), -1);
+double take_bu(vector<int> *promo_bags, vector<double> *promo_costs, int bags) {
+    vector<double> cache(bags);
 
-//     int max_promo_bags = *max_element(promo_bags.begin(), promo_bags.end());
-//     float min_price = *min_element(promo_cost.begin(), promo_cost.end());
+    for(unsigned int i = 1; i <= bags; i++) {
+        double min_cost = numeric_limits<double>::max();
 
-//     for(int i = 1; i <= bags; i++) {
-//         if(base_price * i < min_price ) {
-//             cache[i - 1] = base_price * i;
-//             continue;
-//         }
-
-//         float min_cost = base_price * i;
-
-//         for(unsigned int j = 0; j < promo_bags.size(); j++) {
-//             if(i > max_promo_bags) {
-//                 min_cost = min(min_cost, promo_cost[j] + cache[i - promo_bags[j]]);
-//             } else {
-                
-//             }
-//         }
-
-//         if(i > max_promo_bags) {
-//             for(unsigned int j = 0; j < promo_bags.size(); j++) {
-//                 min_cost = min(min_cost, promo_cost[j] + cache[i - promo_bags[j]]);
-//             }
-//         } else {
+        for(unsigned int j = 0; j < promo_bags->size(); j++) {
+            int bags_tmp = i - promo_bags->at(j);
             
-//         }
+            if(bags_tmp < 1) {
+                min_cost = min(min_cost, promo_costs->at(j));
+            } else {
+                min_cost = min(min_cost, promo_costs->at(j) + cache[bags_tmp - 1]);
+            }
+        }
 
-        
+        cache[i - 1] = min_cost;
+    }
 
-//         cache[i - 1] = min_cost;
-//     }
-
-//     return cache[bags - 1];
-// }
+    return cache[bags - 1];
+}
 
 int main() {
     cout << fixed << setprecision(2);
@@ -73,31 +56,31 @@ int main() {
     cin >> t;
 
     for(int _ = 0; _ < t; _++) {
-        float u;
-        int n, q;
-        cin >> u >> n;
-        vector<int> i(n);
-        vector<float> c(n);
+        double base_price;
+        int num_promos, queries;
+        cin >> base_price >> num_promos;
+        vector<int> promo_bags(num_promos + 1);
+        vector<double> promo_costs(num_promos + 1);
 
-        for(int j = 0; j < n; j++) {
-            int ii;
-            float ic;
-            cin >> ii >> ic;
-            i[j] = ii;
-            c[j] = ic;
+        for(int j = 0; j < num_promos; j++) {
+            int promo_bag;
+            double promo_cost;
+            cin >> promo_bag >> promo_cost;
+            promo_bags[j] = promo_bag;
+            promo_costs[j] = promo_cost;
         }
 
-        i.push_back(1);
-        c.push_back(u);
+        promo_bags[num_promos] = 1;
+        promo_costs[num_promos] = base_price;
 
-        cin >> q;
+        cin >> queries;
 
-        for(int j = 0; j < q; j++) {
-            int a;
-            cin >> a;
-            cache = new int[a];
-            fill(cache, cache + a, -1);
-            cout << "Buy " << a << " for " << take(u, &i, &c, a) << '\n';
+        for(int j = 0; j < queries; j++) {
+            int query;
+            cin >> query;
+            cache = new double[query];
+            fill(cache, cache + query, -1);
+            cout << "Buy " << query << " for " << take_bu(&promo_bags, &promo_costs, query) << '\n';
             delete cache;
         }
     }   
