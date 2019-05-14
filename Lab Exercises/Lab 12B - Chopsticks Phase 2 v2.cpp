@@ -1,14 +1,14 @@
+//Merlin, Santiago
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <algorithm>
 
-#define enable_debug
-
 #ifdef enable_debug
-#define D(x) x
+#define DEBUG(x) x
 #else
-#define D(x) 
+#define DEBUG(x) 
 #endif
 
 using namespace std;
@@ -352,7 +352,7 @@ public:
 
     }
 
-    void on_foot_death(Player *killer) {
+    void on_foot_death() {
         
     }
 };
@@ -366,9 +366,10 @@ public:
         can_revive = true;
     }
 
-    void on_hand_death(Player *killer) {
+    void on_hand_death() {
         if(can_revive) {
             Hand hand_new(Constants::initial_fingers, Constants::zombie_fingers);
+            hand_new.set_owner(this);
             hands.push_back(hand_new);
             can_revive = false;
         }
@@ -389,6 +390,10 @@ public:
         }
     }
 };
+
+
+
+/// ----- TEAM CLASS ----- ///
 
 class Team {
 private:
@@ -427,7 +432,7 @@ public:
         return false;
     }
 
-    bool skip() {
+    void skip() {
         for(unsigned int i = 0; i < players.size(); i++) {
             players[i]->skip();
         }
@@ -446,6 +451,10 @@ public:
         }
     }
 };
+
+
+
+/// --- GAME CLASS --- ///
 
 class Game {
 private:
@@ -479,15 +488,15 @@ public:
         int dead_teams = 0;
 
         for(unsigned int i = 0; i < teams.size(); i++) {
-            if(teams[current_team].is_dead()) dead_teams++;
+            if(teams[i].is_dead()) dead_teams++;
         }
 
         return dead_teams;
     }
 
     bool is_game_over() {
-        if(get_dead_teams() > teams.size() - 2) return false;
-        return true;
+        if(teams.size() - get_dead_teams() <= 1) return true;
+        return false;
     }
 
     int get_winning_team() {
@@ -505,6 +514,7 @@ public:
     }
 
     void end_turn() {
+        teams[current_team].next_player();
         next_team();
 
         while(teams[current_team].is_dead() || !teams[current_team].can_act()) {
@@ -514,8 +524,6 @@ public:
 
             next_team();
         }
-
-        teams[current_team].next_player();
 
         while(get_current_player()->is_dead() || !get_current_player()->can_act()) {
             if(!get_current_player()->can_act()) {
@@ -560,13 +568,19 @@ public:
     void print_game_status() {
         for(unsigned int i = 0; i < teams.size(); i++) {
             if(teams[i].get_number_of_players() > 0) {
-                    cout << "Team " << i + 1 << ": ";
-                    teams[i].print_team_status();
-                    cout << '\n';
+                cout << "Team " << i + 1 << ": ";
+                teams[i].print_team_status();
+                cout << '\n';
             }
         }
+
+        cout << '\n';
     }
 };
+
+
+
+/// ----- GAME HANDLER CLASS ----- ///
 
 class GameHandler {
 private:
@@ -584,11 +598,13 @@ public:
         initialize();
 
         while(!game->is_game_over()) {
+            DEBUG(cout << "Current Player: " << game->get_current_player()->get_player_name() << '\n';)
             game->print_game_status();
             input();
             game->end_turn();
         }
 
+        DEBUG(cout << "Current Player: " << game->get_current_player()->get_player_name() << '\n';)
         game->print_game_status();
         print_game_winner();
     }
@@ -599,8 +615,7 @@ public:
 
         for(int i = 0; i < number_of_players; i++) {
             Player *player;
-            string player_class;
-            string player_name = "Player " + to_string(i);
+            string player_class, player_name = "Player " + to_string(i + 1);
             int team_number;
 
             cin >> player_class >> team_number;
@@ -610,7 +625,7 @@ public:
             if(player_class == "zombie") player = new Zombie(player_name, i);
             if(player_class == "doggo") player = new Doggo(player_name, i);
 
-            game->add_player(player, team_number);
+            game->add_player(player, team_number - 1);
         }
     }
 
@@ -625,33 +640,47 @@ public:
     void run_command(string &command) {
         if(command == "tap") {
             string player_command, target_command, player_body_part, target_body_part;
-            int target_id, player_body_number, target_body_number;
-            cin >> player_command >> target_id >> target_command;
+            int target_number, target_id, player_body_number, target_body_number;
+            cin >> player_command >> target_number >> target_command;
+
+            DEBUG(cout << "tap " << player_command << " " << target_number << " " << target_command << '\n';)
+
+            target_id = target_number - 1;
 
             if(player_command[0] == 'H') player_body_part = "hand";
-            else if(player_command[0] == 'F') player_body_part = "feet";
+            else if(player_command[0] == 'F') player_body_part = "foot";
 
             if(target_command[0] == 'H') target_body_part = "hand";
-            else if(target_command[0] == 'F') target_body_part = "feet";
+            else if(target_command[0] == 'F') target_body_part = "foot";
 
-            player_body_number = player_command[0] - 'A';
-            target_body_number = target_command[0] - 'A';
+            player_body_number = player_command[1] - 'A';
+            target_body_number = target_command[1] - 'A';
 
             game->tap(player_body_part, player_body_number, target_id, target_body_part, target_body_number);
         } else if(command == "disthands") {
             vector<int> hands(game->get_current_player()->get_number_of_hands());
 
+            DEBUG(cout << "disthands ";)
+
             for(unsigned int i = 0; i < hands.size(); i++) {
                 cin >> hands[i];
+                DEBUG(cout << hands[i] << " ";)
             }
+
+            DEBUG(cout << '\n';)
 
             game->disthands(hands);
         } else if(command == "distfeet") {
             vector<int> feet(game->get_current_player()->get_number_of_feet());
 
+            DEBUG(cout << "distfeet ";)
+
             for(unsigned int i = 0; i < feet.size(); i++) {
                 cin >> feet[i];
+                DEBUG(cout << feet[i] << " ";)
             }
+
+            DEBUG(cout << '\n';)
 
             game->distfeet(feet);
         }

@@ -6,9 +6,9 @@
 #include <algorithm>
 
 #ifdef enable_debug
-#define D(x) x
+#define DEBUG(x) x
 #else
-#define D(x) 
+#define DEBUG(x) 
 #endif
 
 using namespace std;
@@ -352,7 +352,7 @@ public:
 
     }
 
-    void on_foot_death(Player *killer) {
+    void on_foot_death() {
         
     }
 };
@@ -366,9 +366,10 @@ public:
         can_revive = true;
     }
 
-    void on_hand_death(Player *killer) {
+    void on_hand_death() {
         if(can_revive) {
             Hand hand_new(Constants::initial_fingers, Constants::zombie_fingers);
+            hand_new.set_owner(this);
             hands.push_back(hand_new);
             can_revive = false;
         }
@@ -389,6 +390,10 @@ public:
         }
     }
 };
+
+
+
+/// ----- TEAM CLASS ----- ///
 
 class Team {
 private:
@@ -446,6 +451,10 @@ public:
         }
     }
 };
+
+
+
+/// --- GAME CLASS --- ///
 
 class Game {
 private:
@@ -569,6 +578,10 @@ public:
     }
 };
 
+
+
+/// ----- GAME HANDLER CLASS ----- ///
+
 class GameHandler {
 private:
     Game *game;
@@ -585,13 +598,13 @@ public:
         initialize();
 
         while(!game->is_game_over()) {
-            D(cout << "Current Player: " << game->get_current_player()->get_player_name() << '\n';)
+            DEBUG(cout << "Current Player: " << game->get_current_player()->get_player_name() << '\n';)
             game->print_game_status();
             input();
             game->end_turn();
         }
 
-        D(cout << "Current Player: " << game->get_current_player()->get_player_name() << '\n';)
+        DEBUG(cout << "Current Player: " << game->get_current_player()->get_player_name() << '\n';)
         game->print_game_status();
         print_game_winner();
     }
@@ -630,7 +643,7 @@ public:
             int target_number, target_id, player_body_number, target_body_number;
             cin >> player_command >> target_number >> target_command;
 
-            D(cout << "tap " << player_command << " " << target_number << " " << target_command << '\n';)
+            DEBUG(cout << "tap " << player_command << " " << target_number << " " << target_command << '\n';)
 
             target_id = target_number - 1;
 
@@ -647,27 +660,27 @@ public:
         } else if(command == "disthands") {
             vector<int> hands(game->get_current_player()->get_number_of_hands());
 
-            D(cout << "disthands ";)
+            DEBUG(cout << "disthands ";)
 
             for(unsigned int i = 0; i < hands.size(); i++) {
                 cin >> hands[i];
-                D(cout << hands[i] << " ";)
+                DEBUG(cout << hands[i] << " ";)
             }
 
-            D(cout << '\n';)
+            DEBUG(cout << '\n';)
 
             game->disthands(hands);
         } else if(command == "distfeet") {
             vector<int> feet(game->get_current_player()->get_number_of_feet());
 
-            D(cout << "distfeet ";)
+            DEBUG(cout << "distfeet ";)
 
             for(unsigned int i = 0; i < feet.size(); i++) {
                 cin >> feet[i];
-                D(cout << feet[i] << " ";)
+                DEBUG(cout << feet[i] << " ";)
             }
 
-            D(cout << '\n';)
+            DEBUG(cout << '\n';)
 
             game->distfeet(feet);
         }
