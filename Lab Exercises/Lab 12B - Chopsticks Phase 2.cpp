@@ -1,3 +1,5 @@
+//Merlin, Santiago
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -15,6 +17,7 @@ class BodyPart;
 class Player;
 class Team;
 class Game;
+class GameHandler;
 
 // TO DO:
 
@@ -196,10 +199,12 @@ protected:
     vector<Foot> feet;
 
     int actions_per_turn;
+    int player_id;
     string player_class;
+    string player_name;
     bool is_skipped;
 public:
-    Player(int _hands, int _feet, int _fingers, int _toes, const string &_player_class, int _actions_per_turn) {
+    Player(int _hands, int _feet, int _fingers, int _toes, const string &_player_class, int _actions_per_turn, const string &_player_name, int _player_id) {
         for(int i = 0; i < _hands; i++) {
             Hand hand(Constants::initial_fingers, _fingers);
             hands.push_back(hand);
@@ -214,6 +219,8 @@ public:
 
         actions_per_turn = _actions_per_turn;
         player_class = _player_class;
+        player_name = _player_name;
+        player_id = _player_id;
         is_skipped = false;
     }
 
@@ -285,6 +292,14 @@ public:
         return player_class;
     }
 
+    virtual string get_player_name() {
+        return player_name;
+    }
+
+    virtual int get_player_id() {
+        return player_id;
+    }
+
     virtual void on_hand_death() {
         
     }
@@ -293,11 +308,11 @@ public:
         skip_next_turn();
     }
 
-    virtual void on_target(Player &target) {
+    virtual void on_target(Player *target) {
 
     }
 
-    virtual void on_player_attack(Player &attacker) {
+    virtual void on_player_attack(Player *attacker) {
 
     }
 
@@ -323,8 +338,8 @@ public:
 class Human: public Player {
 private:
 public:
-    Human()
-        : Player(Constants::human_hands, Constants::human_feet, Constants::human_fingers, Constants::human_toes, Constants::human_class, Constants::human_actions) {
+    Human(string player_name, int player_id)
+        : Player(Constants::human_hands, Constants::human_feet, Constants::human_fingers, Constants::human_toes, Constants::human_class, Constants::human_actions, player_name, player_id) {
 
     }
 };
@@ -332,12 +347,12 @@ public:
 class Alien: public Player {
 private:
 public:
-    Alien()
-        : Player(Constants::alien_hands, Constants::alien_feet, Constants::alien_fingers, Constants::alien_toes, Constants::alien_class, Constants::alien_actions) {
+    Alien(string player_name, int player_id)
+        : Player(Constants::alien_hands, Constants::alien_feet, Constants::alien_fingers, Constants::alien_toes, Constants::alien_class, Constants::alien_actions, player_name, player_id) {
 
     }
 
-    void on_foot_death(Player &killer) {
+    void on_foot_death(Player *killer) {
         
     }
 };
@@ -346,12 +361,12 @@ class Zombie: public Player {
 private:
     bool can_revive;
 public:
-    Zombie()
-        : Player(Constants::zombie_hands, Constants::zombie_feet, Constants::zombie_fingers, Constants::zombie_toes, Constants::zombie_class, Constants::zombie_actions) {
+    Zombie(string player_name, int player_id)
+        : Player(Constants::zombie_hands, Constants::zombie_feet, Constants::zombie_fingers, Constants::zombie_toes, Constants::zombie_class, Constants::zombie_actions, player_name, player_id) {
         can_revive = true;
     }
 
-    void on_hand_death(Player &killer) {
+    void on_hand_death(Player *killer) {
         if(can_revive) {
             Hand hand_new(Constants::initial_fingers, Constants::zombie_fingers);
             hands.push_back(hand_new);
@@ -363,57 +378,53 @@ public:
 class Doggo: public Player {
 private:
 public:
-    Doggo()
-        : Player(Constants::doggo_hands, Constants::doggo_feet, Constants::doggo_fingers, Constants::doggo_toes, Constants::doggo_class, Constants::doggo_actions) {
+    Doggo(string player_name, int player_id)
+        : Player(Constants::doggo_hands, Constants::doggo_feet, Constants::doggo_fingers, Constants::doggo_toes, Constants::doggo_class, Constants::doggo_actions, player_name, player_id) {
 
     }
 
-    void on_target(Player &target) {
-        if(target.get_player_class() != Constants::doggo_class) {
-            target.skip_next_turn();
+    void on_target(Player *target) {
+        if(target->get_player_class() != Constants::doggo_class) {
+            target->skip_next_turn();
         }
     }
 };
 
-
-
-/// ----- TEAMS ----- ///
-
 class Team {
 private:
     vector<Player*> players;
-    vector<int> player_ids;
     int current_player;
 public:
     Team(): current_player(0) {
 
     }
 
-    void add_player(Player *player, int player_id) {
+    void add_player(Player *player) {
         players.push_back(player);
-        player_ids.push_back(player_id);
     }
 
-    void next_player() {
-        if(current_player == -1) current_player = players.size() - 1;
+    Player* get_current_player() {
+        return players[current_player];
+    }
 
-        current_player = (current_player + 1) % players.size();
-        while(!can_current_player_act()) {
-            players[current_player]->skip();
-            current_player = (current_player + 1) % players.size();
+    int get_number_of_players() {
+        return players.size();
+    }
+
+    bool is_dead() {
+        for(unsigned int i = 0; i < players.size(); i++) {
+            if(!players[i]->is_dead()) return false;
         }
+
+        return true;
     }
 
     bool can_act() {
         for(unsigned int i = 0; i < players.size(); i++) {
-            if(players[i]->can_act()) return true;
+            if(players[i]->can_act() && !players[i]->is_dead()) return true;
         }
 
         return false;
-    }
-
-    bool can_current_player_act() {
-        return players[current_player]->can_act();
     }
 
     void skip() {
@@ -422,27 +433,13 @@ public:
         }
     }
 
-    bool is_dead() {
-        for(unsigned int i = 0; i < get_number_of_players(); i++) {
-            if(!players[i]->is_dead()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    int get_current_player() {
-        return player_ids[current_player];
-    }
-
-    int get_number_of_players() {
-        return players.size();
+    void next_player() {
+        current_player = (current_player + 1) % players.size();
     }
 
     void print_team_status() {
         for(unsigned int i = 0; i < players.size(); i++) {
-            cout << "P" << player_ids[i] << players[i]->get_player_class()[0] << " ";
+            cout << "P" << players[i]->get_player_id() + 1 << players[i]->get_player_class()[0] << " ";
             players[i]->print_player_status();
 
             if(i != players.size() - 1) cout << " | ";
@@ -450,9 +447,6 @@ public:
     }
 };
 
-
-
-/// ----- GAME ----- ///
 class Game {
 private:
     vector<Player*> players;
@@ -461,7 +455,8 @@ private:
     int current_team;
     int winner;
 public:
-    Game(int max_players, int max_teams): teams(max_teams), current_team(0) {
+    Game(int max_players, int max_teams)
+        : teams(max_teams), current_team(0) {
         
     }
 
@@ -471,137 +466,98 @@ public:
         }
     }
 
-    int get_current_player() {
+    void add_player(Player* player, int team_number) {
+        players.push_back(player);
+        teams[team_number].add_player(player);
+    }
+
+    Player* get_current_player() {
         return teams[current_team].get_current_player();
+    }
+
+    int get_dead_teams() {
+        int dead_teams = 0;
+
+        for(unsigned int i = 0; i < teams.size(); i++) {
+            if(teams[i].is_dead()) dead_teams++;
+        }
+
+        return dead_teams;
+    }
+
+    bool is_game_over() {
+        if(teams.size() - get_dead_teams() <= 1) return true;
+        return false;
+    }
+
+    int get_winning_team() {
+        if(!is_game_over()) return -1;
+
+        for(unsigned int i = 0; i < teams.size(); i++) {
+            if(!teams[i].is_dead()) return i;
+        }
+
+        return -1;
     }
 
     void next_team() {
         current_team = (current_team + 1) % teams.size();
+    }
+
+    void end_turn() {
+        teams[current_team].next_player();
+        next_team();
 
         while(teams[current_team].is_dead() || !teams[current_team].can_act()) {
             if(!teams[current_team].can_act()) {
                 teams[current_team].skip();
             }
 
-            current_team = (current_team + 1) % teams.size();
+            next_team();
         }
 
-        while(!teams[current_team].can_current_player_act()) {
+        while(get_current_player()->is_dead() || !get_current_player()->can_act()) {
+            if(!get_current_player()->can_act()) {
+                get_current_player()->skip();
+            }
+
             teams[current_team].next_player();
         }
     }
 
-    int get_dead_teams() {
-        int teams_dead = 0;
+    void tap(string &player_body_part, int player_body_number, int target_id, string &target_body_part, int target_body_number) {
+        int player_value, target_value;
 
-        for(int i = 0; i < teams.size(); i++) {
-            if(teams[i].is_dead()) teams_dead++;
+        if(player_body_part == "hand") player_value = get_current_player()->get_hand_fingers(player_body_number);
+        else if(player_body_part == "foot") player_value = get_current_player()->get_foot_toes(player_body_number);
+
+        if(target_body_part == "hand") {
+            target_value = players[target_id]->get_hand_fingers(target_body_number);
+            players[target_id]->set_hand_fingers(target_body_number, player_value + target_value);
+        }
+        else if(target_body_part == "foot") {
+            target_value = players[target_id]->get_foot_toes(target_body_number);
+            players[target_id]->set_foot_toes(target_body_number, player_value + target_value);
         }
 
-        return teams_dead;
-    }
-
-    bool has_won() {
-        if(get_dead_teams() > teams.size() - 2) return true;
-        return false;
-    }
-
-    int get_winner() {
-        if(!has_won()) return -1;
-
-        for(int i = 0; i < teams.size(); i++) {
-            if(!teams[i].is_dead()) return i + 1;
-        }
-
-        return -1;
-    }
-
-    void attack(string player_part_number, int target_id, string target_part_number) {
-        int player_value, target_value, player_number, target_number;
-
-        player_number = player_part_number[1] - 'A';
-        target_number = target_part_number[1] - 'A';
-
-        if(player_part_number[0] == 'H') player_value = players[get_current_player() - 1]->get_hand_fingers(player_number);
-        else if(player_part_number[0] == 'F') player_value = players[get_current_player() - 1]->get_foot_toes(player_number);
-
-        if(target_part_number[0] == 'H') target_value = players[target_id - 1]->get_hand_fingers(target_number);
-        else if(target_part_number[0] == 'F') target_value = players[target_id - 1]->get_foot_toes(target_number);
-
-        D(cout << '\n';
-        cout << "Attack Status: " << '\n';
-        cout << "Player " << get_current_player() << " attacks Player " << target_id << '\n';
-        cout << "Body Part " << player_number + 1 << " with value " << player_value << " attacks Body Part " << target_number + 1 << '\n';
-        cout << "Old Value: " << target_value << '\n';)
-
-        if(target_part_number[0] == 'H') players[target_id - 1]->set_hand_fingers(target_number, player_value + target_value);
-        else if(target_part_number[0] == 'F') players[target_id - 1]->set_foot_toes(target_number, player_value + target_value);
-
-        D(if(target_part_number[0] == 'H') cout << "New Value: " << players[target_id - 1]->get_hand_fingers(target_number) << '\n';
-        else if(target_part_number[0] == 'F') cout << "New Value: " << players[target_id - 1]->get_foot_toes(target_number) << '\n';
-
-        cout << '\n';)
-
-        players[target_id - 1]->on_target(*players[get_current_player() - 1]);
-        players[get_current_player() - 1]->on_player_attack(*players[target_id - 1]);
-
+        get_current_player()->on_player_attack(players[target_id]);
+        players[target_id]->on_target(get_current_player());
     }
 
     void disthands(vector<int> hands) {
-        for(unsigned int i = 0; i < hands.size(); i++) {
-            players[get_current_player() - 1]->set_hand_fingers(i, hands[i]);
+        for(unsigned int i = 0; i < get_current_player()->get_number_of_hands(); i++) {
+            get_current_player()->set_hand_fingers(i, hands[i]);
         }
     }
 
     void distfeet(vector<int> feet) {
-        for(unsigned int i = 0; i < feet.size(); i++) {
-            players[get_current_player() - 1]->set_foot_toes(i, feet[i]);
+        for(unsigned int i = 0; i < get_current_player()->get_number_of_feet(); i++) {
+            get_current_player()->set_foot_toes(i, feet[i]);
         }
     }
-
-    void run_command(string &input) {
-        if(input == "tap") {
-            string a, c;
-            int b;
-            cin >> a >> b >> c;
-            attack(a, b, c);
-        } else if(input == "disthands") {
-            vector<int> hands(players[get_current_player() - 1]->get_number_of_hands());
-
-            for(unsigned int i = 0; i < players[get_current_player() - 1]->get_number_of_hands(); i++) {
-                int x;
-                cin >> x;
-                hands[i] = x;
-            }
-
-            disthands(hands);
-        } else if(input == "distfeet") {
-            vector<int> feet(players[get_current_player() - 1]->get_number_of_feet());
-
-            for(unsigned int i = 0; i < players[get_current_player() - 1]->get_number_of_feet(); i++) {
-                int x;
-                cin >> x;
-                feet[i] = x;
-            }
-
-            distfeet(feet);
-        }
-    }
-
-    void get_input() {
-        for(int i = 0; i < players[get_current_player() - 1]->get_actions_per_turn(); i++) {
-            string command;
-            cin >> command;
-            run_command(command);
-        }
-
-        teams[current_team].next_player();
-        next_team();
-    }
-    
 
     void print_game_status() {
-        for(int i = 0; i < teams.size(); i++) {
+        for(unsigned int i = 0; i < teams.size(); i++) {
             if(teams[i].get_number_of_players() > 0) {
                 cout << "Team " << i + 1 << ": ";
                 teams[i].print_team_status();
@@ -611,93 +567,120 @@ public:
 
         cout << '\n';
     }
+};
 
-    void print_game_winner() {
-        cout << "Team " << get_winner() << " wins!";
+class GameHandler {
+private:
+    Game *game;
+public:
+    GameHandler(Game* game) {
+        this->game = game;
     }
 
-    void initialize() {
-        int number_players, number_teams;
-        cin >> number_players >> number_teams;
-
-        for(int i = 0; i < number_players; i++) {
-            string class_name;
-            cin >> class_name;
-            
-            if(class_name == "human") {
-                Player *player = new Human;
-                players.push_back(player);
-            } else if(class_name == "alien") {
-                Player *player = new Alien;
-                players.push_back(player);
-            } else if(class_name == "zombie") {
-                Player *player = new Zombie;
-                players.push_back(player);
-            } else if(class_name == "doggo") {
-                Player *player = new Zombie;
-                players.push_back(player);
-            }
-
-            int team_number;
-            cin >> team_number;
-
-            teams[team_number - 1].add_player(players[i], i + 1);
-        }
+    void print_game_winner() {
+        cout << "Team " << game->get_winning_team() + 1 << " wins!";
     }
 
     void run() {
         initialize();
 
-        while(!has_won()) {
-            D(cout << "Current Turn: Player " << get_current_player() << '\n';)
-            print_game_status();
-            get_input();
+        while(!game->is_game_over()) {
+            D(cout << "Current Player: " << game->get_current_player()->get_player_name() << '\n';)
+            game->print_game_status();
+            input();
+            game->end_turn();
         }
 
-        print_game_status();
+        D(cout << "Current Player: " << game->get_current_player()->get_player_name() << '\n';)
+        game->print_game_status();
         print_game_winner();
+    }
+
+    void initialize() {
+        int number_of_players, number_of_teams;
+        cin >> number_of_players >> number_of_teams;
+
+        for(int i = 0; i < number_of_players; i++) {
+            Player *player;
+            string player_class, player_name = "Player " + to_string(i + 1);
+            int team_number;
+
+            cin >> player_class >> team_number;
+
+            if(player_class == "human") player = new Human(player_name, i);
+            if(player_class == "alien") player = new Alien(player_name, i);
+            if(player_class == "zombie") player = new Zombie(player_name, i);
+            if(player_class == "doggo") player = new Doggo(player_name, i);
+
+            game->add_player(player, team_number - 1);
+        }
+    }
+
+    void input() {
+        for(int i = 0; i < game->get_current_player()->get_actions_per_turn(); i++) {
+            string command;
+            cin >> command;
+            run_command(command);
+        }
+    }
+
+    void run_command(string &command) {
+        if(command == "tap") {
+            string player_command, target_command, player_body_part, target_body_part;
+            int target_number, target_id, player_body_number, target_body_number;
+            cin >> player_command >> target_number >> target_command;
+
+            D(cout << "tap " << player_command << " " << target_number << " " << target_command << '\n';)
+
+            target_id = target_number - 1;
+
+            if(player_command[0] == 'H') player_body_part = "hand";
+            else if(player_command[0] == 'F') player_body_part = "foot";
+
+            if(target_command[0] == 'H') target_body_part = "hand";
+            else if(target_command[0] == 'F') target_body_part = "foot";
+
+            player_body_number = player_command[1] - 'A';
+            target_body_number = target_command[1] - 'A';
+
+            game->tap(player_body_part, player_body_number, target_id, target_body_part, target_body_number);
+        } else if(command == "disthands") {
+            vector<int> hands(game->get_current_player()->get_number_of_hands());
+
+            D(cout << "disthands ";)
+
+            for(unsigned int i = 0; i < hands.size(); i++) {
+                cin >> hands[i];
+                D(cout << hands[i] << " ";)
+            }
+
+            D(cout << '\n';)
+
+            game->disthands(hands);
+        } else if(command == "distfeet") {
+            vector<int> feet(game->get_current_player()->get_number_of_feet());
+
+            D(cout << "distfeet ";)
+
+            for(unsigned int i = 0; i < feet.size(); i++) {
+                cin >> feet[i];
+                D(cout << feet[i] << " ";)
+            }
+
+            D(cout << '\n';)
+
+            game->distfeet(feet);
+        }
     }
 };
 
 void execute_game() {
-    Game game(Constants::max_players, Constants::max_teams);
-    game.run();
+    Game *game = new Game(Constants::max_players, Constants::max_teams);
+    GameHandler gamehandler(game);
+    gamehandler.run();
+    delete game;
 }
 
-int main () {
+int main() {
     execute_game();
-
-    // TESTING STUFF
-
-    // Human human;
-    // cout << human.get_number_of_hands() << '\n';
-    // cout << human.get_number_of_feet() << '\n';
-    // cout << human.get_hand_fingers(0) << '\n';
-    // cout << human.get_foot_toes(0) << '\n';
-    // cout << '\n';
-    // Zombie zombie;
-    // Alien alien;
-    // Team team;
-    // team.add_player(&human, 1);
-    // team.add_player(&zombie, 2);
-    // team.add_player(&alien, 4);
-
-    // cout << team.get_current_player() << '\n';
-    // team.next_player();
-    // cout << team.get_current_player() << '\n';
-    // team.next_player();
-    // cout << team.get_current_player() << '\n';
-    // team.next_player();
-    // cout << team.get_current_player() << '\n';
-    // team.next_player();
-    // cout << team.get_current_player() << '\n';
-    // team.next_player();
-    // cout << team.get_current_player() << '\n';
-    // cout << '\n';
-
-    // cout << human.can_act() << '\n';
-    // human.skip_next_turn();
-    // cout << human.can_act() << '\n';
-    // human.skip();
-    // cout << human.can_act() << '\n';
-}   
+}

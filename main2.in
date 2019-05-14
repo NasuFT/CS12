@@ -1,5 +1,26 @@
 2
-6
-1 2 4 8 16 32
-6
-1 3 6 8 15 20
+2
+human
+1
+human
+2
+tap HA 2 HA
+tap HA 1 HB
+tap HB 2 HA
+tap HB 1 FB
+tap FB 2 FB
+tap FB 1 HA
+tap FB 2 HB
+distfeet 2 2
+tap FB 2 FA
+tap FA 1 FB
+tap FA 1 FA
+tap HB 1 HB
+disthands 3 2
+tap FA 1 HB
+tap HB 2 FA
+tap HB 2 HB
+tap FB 1 HA
+tap HB 2 HB
+tap FB 1 HB
+tap HB 2 FB
