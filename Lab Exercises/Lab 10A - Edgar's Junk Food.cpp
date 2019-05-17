@@ -81,7 +81,7 @@ int main() {
             cache = new double[query];
             fill(cache, cache + query, -1);
             cout << "Buy " << query << " for " << take_bu(&promo_bags, &promo_costs, query) << '\n';
-            delete cache;
+            delete [] cache;
         }
     }   
 }

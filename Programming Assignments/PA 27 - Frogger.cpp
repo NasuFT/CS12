@@ -7,11 +7,11 @@ using namespace std;
 
 int *cache;
 
-int minimum_cost(int stones, vector<int> costs, int step, int current = 1) {
+int minimum_cost(int stones, vector<int> &costs, int step, int current = 1) {
     if(cache[current - 1] != -1) return cache[current - 1];
     if(current == stones) return 0;
 
-    int min_cost = 100000000;
+    int min_cost = numeric_limits<int>::max();
 
     for(int i = 1; i <= step; i++) {
         if(current + i > stones) break;
