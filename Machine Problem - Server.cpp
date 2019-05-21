@@ -1,9 +1,12 @@
 //Merlin, Santiago
 
+#include "socketstream/socketstream.hh"
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <stdexcept>
 
 #ifdef enable_debug
 #define DEBUG(x) x
@@ -12,11 +15,13 @@
 #endif
 
 using namespace std;
+using namespace swoope;
 
 class BodyPart;
 class Player;
 class Team;
 class Game;
+class Server;
 class GameHandler;
 
 // TO DO:
@@ -58,9 +63,18 @@ public:
     static const int doggo_toes;
     static const int doggo_actions;
 
+    static const int min_teams;
     static const int max_teams;
 
+    static const int min_players;
     static const int max_players;
+
+    static const int min_port;
+    static const int max_port;
+
+    static const string port_out_of_range_msg;
+    static const string players_out_of_range_msg;
+    static const string teams_out_of_range_msg;
 };
 
 /// BODY PART CONSTANTS
@@ -100,13 +114,25 @@ const int Constants::doggo_fingers = 0;
 const int Constants::doggo_toes = 4;
 const int Constants::doggo_actions = 1;
 
-/// TEAM CONSTANTS
-
-const int Constants::max_teams = 3;
-
 /// GAME CONSTANTS
 
+const int Constants::min_players = 2;
 const int Constants::max_players = 6;
+
+/// TEAM CONSTANTS
+
+const int Constants::min_teams = 2;
+const int Constants::max_teams = Constants::max_players;
+
+/// SERVER CONSTANTS
+
+const int Constants::min_port = 1024;
+const int Constants::max_port = 65535;
+
+/// ERROR MESSAGES
+const string Constants::port_out_of_range_msg = "Invalid Port! Valid Ports Range: (" + to_string(Constants::min_port) + "-" + to_string(Constants::max_port) + ")";
+const string Constants::players_out_of_range_msg = "Invalid Number of Players! Valid Number of Players Range: (" + to_string(Constants::min_players) + "-" + to_string(Constants::max_players) + ")";
+const string Constants::teams_out_of_range_msg = "Invalid Number of Teams! Valid Number of Teams Range: (" + to_string(Constants::min_teams) + "-" + to_string(Constants::max_teams) + ")";
 
 
 
@@ -332,28 +358,6 @@ public:
             if(feet[i].is_dead()) str += "X";
             else str += to_string(feet[i].get_value());
         }
-
-        str += ")";
-
-        return str;
-    }
-
-    virtual void print_player_status() {
-        cout << "(";
-
-        for(unsigned int i = 0; i < hands.size(); i++) {
-            if(hands[i].is_dead()) cout << "X";
-            else cout << hands[i].get_value();
-        }
-
-        cout << ":";
-
-        for(unsigned int i = 0; i < feet.size(); i++) {
-            if(feet[i].is_dead()) cout << "X";
-            else cout << feet[i].get_value();
-        }
-
-        cout << ")";
     }
 };
 
@@ -473,15 +477,8 @@ public:
 
             if(i != players.size() - 1) str += " | ";
         }
-    }
 
-    void print_team_status() {
-        for(unsigned int i = 0; i < players.size(); i++) {
-            cout << "P" << players[i]->get_player_id() + 1 << players[i]->get_player_class()[0] << " ";
-            players[i]->print_player_status();
-
-            if(i != players.size() - 1) cout << " | ";
-        }
+        return str;
     }
 };
 
@@ -611,42 +608,139 @@ public:
 
         return str;
     }
-
-    void print_game_status() {
-        for(unsigned int i = 0; i < teams.size(); i++) {
-            if(teams[i].get_number_of_players() > 0) {
-                cout << "Team " << i + 1 << ": ";
-                teams[i].print_team_status();
-                cout << '\n';
-            }
-        }
-
-        cout << '\n';
-    }
 };
 
 
+
+/// ----- SERVER CLASS ----- ///
+
+class Server {
+    socketstream server;
+    vector<socketstream> *clients;
+    vector<int> client_ids;
+    int port;
+public:
+    Server(string port) {
+        this->port = atoi(port.c_str());
+
+        if(!check_port_validity(this->port)) {
+            cout << Constants::port_out_of_range_msg << endl;
+            throw out_of_range(Constants::port_out_of_range_msg + " - Port Received: " + port);
+        }
+    }
+
+    ~Server() {
+        for(unsigned int i = 0; i < clients->size(); i++) {
+            clients->at(i).close();
+        }
+    }
+
+    void open(int connections) {
+        server.open(to_string(port), connections);
+    }
+
+    void wait_connections(int connections) {
+        for(int i = 0; i < connections; i++) {
+            string waiting_msg = "Waiting for " + to_string(connections - i) + " more player" + (connections - i == 1 ? "" : "s") + " to connect...";
+            cout << waiting_msg << endl;
+            send_all_clients(waiting_msg);
+
+            socketstream client;
+            add_client(&client);
+            client_ids.push_back(client_ids.size());
+
+            server.accept(clients->at(i));
+
+            string join_msg = "You have joined the game as: Player " + to_string(i + 2);
+            send_client(i, join_msg);
+            send_client(i, connections - i - 1);
+            send_client(i, client_ids[client_ids.size() - 1]);
+        }
+
+        string all_connected = "All players connected!";
+        cout << all_connected << '\n';
+        send_all_clients(all_connected);
+    }
+
+    void add_client(socketstream *client) {
+        clients->push_back(*client);
+    }
+
+    void send_client(int i, string str) {
+        clients->at(i) << str << endl;
+    }
+
+    void send_all_clients(string str) {
+        for(unsigned int i = 0; i < clients->size(); i++) {
+            send_client(i, str);
+        }
+    }
+
+    void send_client(int i, int data) {
+        clients->at(i) << data << endl;
+    }
+
+    void send_all_clients(int data) {
+        for(unsigned int i = 0; i < clients->size(); i++) {
+            send_client(i, data);
+        }
+    }
+
+    string get_client_string(int i) {
+        string str;
+        clients->at(i).ignore(1024, '\n');
+        getline(clients->at(i), str);
+        return str;
+    }
+
+    int get_client_int(int i) {
+        int data;
+        clients->at(i) >> data;
+        return data;
+    }
+
+    int get_number_of_clients() {
+        return clients->size();
+    }
+
+    bool check_port_validity(int port) {
+        return (Constants::min_port <= port && port <= Constants::max_port);
+    }
+
+    socketstream* get_socket() {
+        return &server;
+    }
+};
 
 /// ----- GAME HANDLER CLASS ----- ///
 
 class GameHandler {
 private:
     Game *game;
+    Server *server;
+    int number_of_players;
+    int number_of_teams;
 public:
-    GameHandler(Game* game) {
+    GameHandler(Game* game, Server *server) {
         this->game = game;
-    }
-
-    void print_game_winner() {
-        cout << "Team " << game->get_winning_team() + 1 << " wins!";
+        this->server = server;
     }
 
     void print_game_status() {
         cout << game->get_game_status() << '\n';
     }
 
+    void print_game_winner() {
+        string str = "Team " + to_string(game->get_winning_team() + 1) + " wins!\n";
+
+        cout << "Team " << game->get_winning_team() + 1 << " wins!\n";
+
+        server->send_all_clients(str);
+    }
+
     void run() {
-        initialize();
+        initialize_server();
+        initialize_game();
 
         while(!game->is_game_over()) {
             print_game_status();
@@ -654,20 +748,95 @@ public:
             game->end_turn();
         }
 
-        game->print_game_status();
+        print_game_status();
         print_game_winner();
     }
 
-    void initialize() {
-        int number_of_players, number_of_teams;
-        cin >> number_of_players >> number_of_teams;
+    void initialize_server() {
+        int number_of_players = 0, number_of_teams = 0;
+        cout << "How many players will play? (" << Constants::min_players << "-" << Constants::max_players << " players): ";
 
-        for(int i = 0; i < number_of_players; i++) {
+        while(number_of_players < Constants::min_players || number_of_players > Constants::max_players) {
+            cin >> number_of_players;
+
+            if(number_of_players < Constants::min_players || number_of_players > Constants::max_players) {
+                cout << "Invalid input! Try again (" << Constants::min_players << "-" << Constants::max_players << " players): ";
+            }
+        }
+
+        this->number_of_players = number_of_players;
+
+        cout << "How many teams will play? (" << Constants::min_teams << "-" << Constants::max_teams << " teams): ";
+        while(number_of_teams < Constants::min_teams || number_of_teams > Constants::max_teams) {
+            cin >> number_of_teams;
+
+            if(number_of_teams < Constants::min_teams || number_of_teams > Constants::max_teams) {
+                cout << "Invalid input! Try again (" << Constants::min_teams << "-" << Constants::max_teams << " teams): ";
+            }
+        }
+
+        this->number_of_teams = number_of_teams;
+
+        server->open(number_of_players - 1);
+        server->wait_connections(number_of_players - 1);
+        server->send_all_clients(number_of_players);
+        server->send_all_clients(number_of_teams);
+    }
+
+    void initialize_game() {
+        string str = "Waiting for Player 1 to pick Player Type and Team Number...";
+        server->send_all_clients(str);
+
+        Player *player;
+        string player_class, player_name = "Player 1";
+        int team_number = 0;
+
+        cout << "Choose[type] your preferred player class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
+        while(!is_valid_player_class(player_class)) {
+            cin >> player_class;
+
+            if(!is_valid_player_class(player_class)) {
+                cout << "Invalid player class!\n";
+                cout << "Choose[type] your preferred player class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
+            }
+        }
+
+        cout << "Choose[type] your preferred team number (1-" << number_of_teams << "): ";
+        while(team_number < 1 || team_number > number_of_teams) {
+            cin >> team_number;
+
+            if(team_number < 1 || team_number > number_of_teams) {
+                cout << "Invalid player class!\n";
+                cout << "Choose[type] your preferred team number (1-" << number_of_teams << "): ";
+            }
+        }
+
+        if(player_class == "human") player = new Human(player_name, 0);
+        if(player_class == "alien") player = new Alien(player_name, 0);
+        if(player_class == "zombie") player = new Zombie(player_name, 0);
+        if(player_class == "doggo") player = new Doggo(player_name, 0);
+
+        game->add_player(player, team_number - 1);
+
+        //SERVER STUFF
+
+        int number_of_clients = server->get_number_of_clients();
+
+        for(int i = 0, player_number = 1; i < number_of_clients; i++, player_number++) {
             Player *player;
-            string player_class, player_name = "Player " + to_string(i + 1);
+            string player_class, player_name = "Player " + to_string(i + 2);
             int team_number;
 
-            cin >> player_class >> team_number;
+            str = "Waiting for Player " + to_string(i + 2) + " to pick Player Type and Team Number...";
+            cout << str;
+            for(unsigned int j = 0; i < server->get_number_of_clients(); j++) {
+                if(i != j) {
+                    server->send_client(j, str);
+                }
+            }
+
+            player_class = server->get_client_string(i);
+            team_number = server->get_client_int(i);
 
             if(player_class == "human") player = new Human(player_name, i);
             if(player_class == "alien") player = new Alien(player_name, i);
@@ -676,6 +845,11 @@ public:
 
             game->add_player(player, team_number - 1);
         }
+    }
+
+    bool is_valid_player_class(string str) {
+        if(str == "doggo" || str == "human" || str == "alien" || str == "zombie") return true;
+        return false;
     }
 
     void input() {
@@ -729,13 +903,15 @@ public:
     }
 };
 
-void execute_game() {
+void execute_server(string port) {
     Game *game = new Game(Constants::max_players, Constants::max_teams);
-    GameHandler gamehandler(game);
+    Server server(port);
+
+    GameHandler gamehandler(game, &server);
     gamehandler.run();
     delete game;
 }
 
-int main() {
-    execute_game();
+int main(int argc, char *argv[]) {
+    execute_server(argv[1]);
 }

@@ -1,23 +1,59 @@
-4
-2
+5
+3
 zombie
 2
+doggo
+3
 doggo
 1
 alien
 1
 human
 2
-tap FA 1 HA 
-tap HA 3 HA 
-tap HA 3 FA 
-tap HB 1 HA 
-tap HA 2 FB 
-tap FA 1 HA 
-tap HB 3 FB 
-tap HB 3 FB 
-tap HB 1 HB 
-tap HB 2 FB 
-tap HB 2 FC
-tap HB 1 HB
-tap HB 3 HB
+tap FA 2 FA
+tap HA 3 FD
+tap HA 2 FA
+tap FA 5 FB
+tap HA 5 FB
+tap FB 1 HA
+tap FA 1 HA
+tap FA 3 FC
+tap FA 4 FB
+tap HA 5 FA
+tap HA 4 HA
+tap HA 4 HA
+tap FA 5 HA
+tap FA 5 HA
+tap HA 4 HB
+tap HA 4 HB
+tap FB 4 HC
+tap HC 5 HB
+tap FA 4 HA
+tap FA 4 FA
+tap FD 2 FD
+tap HA 4 HB
+tap HA 4 HB
+tap FB 3 FC
+tap HB 2 FB
+tap FA 3 FA
+tap FB 4 HB
+tap FD 5 HB
+tap HA 3 FA
+tap HA 2 FD
+distfeet 2 1 3 4
+disthands 3 3 1 2
+tap FA 4 HC
+tap FB 4 HD
+tap FC 1 HA
+tap HA 3 FD
+tap HA 2 FA
+tap FA 3 FC
+tap FB 1 HA
+tap FB 1 HA
+tap FB 2 FC
+tap HB 3 FB
+tap HB 3 FB
+tap FB 5 FA
+tap FB 1 HB
+tap FB 2 FB
+tap HB 3 FB
