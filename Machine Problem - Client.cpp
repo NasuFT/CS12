@@ -108,7 +108,7 @@ public:
         connections_left = client->get_server_int();
         conn_id = client->get_server_int();
 
-        for(int i = connections_left; i > 0; i--) {
+        for(int i = 0; i < connections_left; i++) {
             string wait_msg = client->get_server_string();
             cout << wait_msg << '\n';
         }

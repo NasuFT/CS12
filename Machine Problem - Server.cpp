@@ -880,7 +880,7 @@ public:
 
         server->send_all_clients(is_valid_team_grouping(team_numbers));
         while(!is_valid_team_grouping(team_numbers)) {
-            string wait_msg = "Waiting for Player 1 to pick Player Type...";
+            string wait_msg = "Waiting for Player 1 to pick Team Number...";
             server->send_all_clients(wait_msg);
 
             int team_number = 0;
@@ -948,10 +948,9 @@ public:
         if(max_team_number < Constants::min_teams) return false;
 
         for(int i = max_team_number; i > 1; i++) {
-            for(int j = 0; j < team_numbers.size(); j++) {
-                if(team_numbers[j] == i - 1) break;
-                if(j == team_numbers.size() - 1) return false;
-            }
+            if(find(team_numbers.begin(), team_numbers.end(), i - 1) == team_numbers.end()) {
+                return false;
+            } 
         }
 
         return true;
@@ -964,7 +963,7 @@ public:
     int get_no_player_team(vector<int> &team_numbers) {
         int max_team_number = *max_element(team_numbers.begin(), team_numbers.end());
         for(int team_number = 1; team_number < max_team_number; team_number++) {
-            if(find(team_numbers.begin(), team_numbers.end(), team_number) == team_numbers.end()) {
+            if(find(team_numbers.begin(), team_numbers.end(), team_number - 1) == team_numbers.end()) {
                 return team_number;
             }
         }
