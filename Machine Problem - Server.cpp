@@ -358,6 +358,8 @@ public:
             if(feet[i].is_dead()) str += "X";
             else str += to_string(feet[i].get_value());
         }
+
+        return str;
     }
 };
 
@@ -919,6 +921,8 @@ public:
                 server->send_all_clients(invalid_team_grouping_msg);
             }
         }
+
+        return team_numbers;
     }
 
     bool is_valid_player_class(string str) {
