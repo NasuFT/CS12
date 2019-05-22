@@ -26,6 +26,16 @@ const int Constants::max_port = 65535;
 
 const string Constants::port_out_of_range_msg = "Invalid Port! Valid Ports Range: (" + to_string(Constants::min_port) + "-" + to_string(Constants::max_port) + ")";
 
+bool is_number(string &str) {
+    if(str.empty()) return false;
+    for(unsigned int i = 0; i < str.size(); i++) {
+        if(!isdigit(str[i])) return false;
+    }
+
+    return true;
+}
+
+
 class Client {
     string server_ip_address;
     int server_port;
@@ -168,11 +178,11 @@ public:
         bool is_valid = client->get_server_bool();
         string msg = client->get_server_string();
         cout << msg;
-        int team_number;
+        string team_number;
 
         while(!is_valid) {
-            cin >> team_number;
-            client->send_server_int(team_number);
+            getline(cin, team_number);
+            client->send_server_string(team_number);
             is_valid = client->get_server_bool();
             if(!is_valid) {
                 string invalid_team_number_msg = client->get_server_string();
@@ -180,9 +190,7 @@ public:
             }
         }
 
-        cin.ignore(1024, '\n');
-
-        return team_number;
+        return atoi(team_number.c_str());
     }
 
     string ask_player_class() {

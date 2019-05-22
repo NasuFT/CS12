@@ -787,7 +787,7 @@ public:
         while(!is_number(str) || atoi(str.c_str()) < Constants::min_players || atoi(str.c_str()) > Constants::max_players) {
             getline(cin, str);
 
-            if(atoi(str.c_str()) < Constants::min_players || atoi(str.c_str()) > Constants::max_players) {
+            if(!is_number(str) || atoi(str.c_str()) < Constants::min_players || atoi(str.c_str()) > Constants::max_players) {
                 cout << "Invalid input! Try again (" << Constants::min_players << "-" << Constants::max_players << " players): ";
             }
         }
@@ -799,7 +799,7 @@ public:
         while(!is_number(str) || atoi(str.c_str()) < Constants::min_teams || atoi(str.c_str()) > number_of_players) {
             getline(cin, str);
 
-            if(atoi(str.c_str()) < Constants::min_teams || atoi(str.c_str()) > number_of_players) {
+            if(!is_number(str) || atoi(str.c_str()) < Constants::min_teams || atoi(str.c_str()) > number_of_players) {
                 cout << "Invalid input! Try again (" << Constants::min_teams << "-" << number_of_players << " teams): ";
             }
         }
@@ -883,11 +883,11 @@ public:
             string wait_msg = "Waiting for Player 1 to pick Team Number...";
             server->send_all_clients(wait_msg);
 
-            int team_number = 0;
+            string team_number;
 
             cout << "Choose[type] your preferred team number: (1-" << to_string(number_of_teams) << "): ";
             while(!is_valid_team_number(team_number)) {
-                cin >> team_number;
+                getline(cin, team_number);
 
                 if(!is_valid_team_number(team_number)) {
                     cout << "Invalid team number!\n";
@@ -895,12 +895,10 @@ public:
                 }
             }
 
-            cin.ignore(1024, '\n');
-
-            team_numbers[0] = team_number;
+            team_numbers[0] = atoi(team_number.c_str());
 
             for(int i = 0; i < server->get_number_of_clients(); i++) {
-                int team_number = 0;
+                string team_number;
                 wait_msg = "Waiting for Player " + to_string(i + 2) + " to pick Team Number...";
                 cout << wait_msg << '\n';
                 for(int j = 0; j < server->get_number_of_clients(); j++) {
@@ -915,7 +913,7 @@ public:
                 server->send_client(i, msg);
 
                 while(!is_valid_team_number(team_number)) {
-                    team_number = server->get_client_int(i);
+                    team_number = server->get_client_string(i);
 
                     server->send_client(i, is_valid_team_number(team_number));
                     if(!is_valid_team_number(team_number)) {
@@ -924,7 +922,7 @@ public:
                     }
                 }
 
-                team_numbers[i + 1] = team_number;
+                team_numbers[i + 1] = atoi(team_number.c_str());
             }
 
             server->send_all_clients(is_valid_team_grouping(team_numbers));
@@ -956,8 +954,8 @@ public:
         return true;
     }
 
-    bool is_valid_team_number(int team_number) {
-        return (0 < team_number && team_number <= number_of_teams);
+    bool is_valid_team_number(string &team_number) {
+        return (is_number(team_number) && 0 < atoi(team_number.c_str()) && atoi(team_number.c_str()) <= number_of_teams);
     }
 
     int get_no_player_team(vector<int> &team_numbers) {

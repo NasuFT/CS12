@@ -473,6 +473,8 @@ public:
 
             if(i != players.size() - 1) str += " | ";
         }
+
+        return str;
     }
 
     void print_team_status() {
@@ -642,6 +644,7 @@ public:
     }
 
     void print_game_status() {
+        cout << "Current Player: " << game->get_current_player()->get_player_name() << '\n';
         cout << game->get_game_status() << '\n';
     }
 
