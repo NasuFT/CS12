@@ -947,7 +947,7 @@ public:
         int max_team_number = *max_element(team_numbers.begin(), team_numbers.end());
         if(max_team_number < Constants::min_teams) return false;
 
-        for(int i = max_team_number; i > 1; i++) {
+        for(int i = max_team_number; i > 1; i--) {
             if(find(team_numbers.begin(), team_numbers.end(), i - 1) == team_numbers.end()) {
                 return false;
             } 
@@ -962,7 +962,7 @@ public:
 
     int get_no_player_team(vector<int> &team_numbers) {
         int max_team_number = *max_element(team_numbers.begin(), team_numbers.end());
-        for(int team_number = max_team_number; team_number > 1; team_number++) {
+        for(int team_number = max_team_number; team_number > 1; team_number--) {
             if(find(team_numbers.begin(), team_numbers.end(), team_number - 1) == team_numbers.end()) {
                 return team_number - 1;
             }

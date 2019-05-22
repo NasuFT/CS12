@@ -167,7 +167,7 @@ public:
     int ask_player_team_number() {
         bool is_valid = client->get_server_bool();
         string msg = client->get_server_string();
-        cout << msg << '\n';
+        cout << msg;
         int team_number;
 
         while(!is_valid) {
@@ -188,7 +188,7 @@ public:
     string ask_player_class() {
         bool is_valid = client->get_server_bool();
         string msg = client->get_server_string();
-        cout << msg << '\n';
+        cout << msg;
         string player_class;
 
         while(!is_valid) {
