@@ -218,6 +218,7 @@ public:
 void execute_client(string server_ip_address, string server_port) {
     Client *client = new Client(server_ip_address, server_port);
     GameClient *gameclient = new GameClient(client);
+    gameclient->run();
 }
 
 int main(int argc, char *argv[]) {

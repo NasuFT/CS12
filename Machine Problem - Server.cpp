@@ -134,6 +134,16 @@ const string Constants::port_out_of_range_msg = "Invalid Port! Valid Ports Range
 const string Constants::players_out_of_range_msg = "Invalid Number of Players! Valid Number of Players Range: (" + to_string(Constants::min_players) + "-" + to_string(Constants::max_players) + ")";
 const string Constants::teams_out_of_range_msg = "Invalid Number of Teams! Valid Number of Teams Range: (" + to_string(Constants::min_teams) + "-" + to_string(Constants::max_teams) + ")";
 
+/// HELPER FUNCTIONS
+bool is_number(string &str) {
+    if(str.empty()) return false;
+    for(unsigned int i = 0; i < str.size(); i++) {
+        if(!isdigit(str[i])) return false;
+    }
+
+    return true;
+}
+
 
 
 /// ----- BODY PARTS ----- ///
@@ -619,11 +629,13 @@ public:
 class Server {
     socketstream server;
     vector<socketstream> *clients;
+    int current_clients;
     vector<int> client_ids;
     int port;
 public:
     Server(string port) {
         this->port = atoi(port.c_str());
+        current_clients = 0;
 
         if(!check_port_validity(this->port)) {
             cout << Constants::port_out_of_range_msg << endl;
@@ -645,15 +657,14 @@ public:
 
     void wait_connections(int connections) {
         clients = new vector<socketstream>(connections);
-
         for(int i = 0; i < connections; i++) {
             string waiting_msg = "Waiting for " + to_string(connections - i) + " more player" + (connections - i == 1 ? "" : "s") + " to connect...";
             cout << waiting_msg << endl;
             send_all_clients(waiting_msg);
 
-            client_ids.push_back(client_ids.size());
-
             server.accept(clients->at(i));
+            client_ids.push_back(client_ids.size());
+            current_clients++;
 
             string join_msg = "You have joined the game as: Player " + to_string(i + 2);
             send_client(i, join_msg);
@@ -671,7 +682,7 @@ public:
     }
 
     void send_all_clients(string str) {
-        for(unsigned int i = 0; i < clients->size(); i++) {
+        for(unsigned int i = 0; i < current_clients; i++) {
             send_client(i, str);
         }
     }
@@ -681,7 +692,7 @@ public:
     }
 
     void send_all_clients(int data) {
-        for(unsigned int i = 0; i < clients->size(); i++) {
+        for(unsigned int i = 0; i < current_clients; i++) {
             send_client(i, data);
         }
     }
@@ -691,7 +702,7 @@ public:
     }
 
     void send_all_clients(bool data) {
-        for(unsigned int i = 0; i < clients->size(); i++) {
+        for(unsigned int i = 0; i < current_clients; i++) {
             send_client(i, data);
         }
     }
@@ -770,31 +781,30 @@ public:
     }
 
     void initialize_server() {
-        int number_of_players = 0, number_of_teams = 0;
+        string str;
         cout << "How many players will play? (" << Constants::min_players << "-" << Constants::max_players << " players): ";
 
-        while(number_of_players < Constants::min_players || number_of_players > Constants::max_players) {
-            cin >> number_of_players;
+        while(!is_number(str) || atoi(str.c_str()) < Constants::min_players || atoi(str.c_str()) > Constants::max_players) {
+            getline(cin, str);
 
-            if(number_of_players < Constants::min_players || number_of_players > Constants::max_players) {
+            if(atoi(str.c_str()) < Constants::min_players || atoi(str.c_str()) > Constants::max_players) {
                 cout << "Invalid input! Try again (" << Constants::min_players << "-" << Constants::max_players << " players): ";
             }
         }
 
-        this->number_of_players = number_of_players;
+        number_of_players = atoi(str.c_str());
+        str.clear();
 
-        cout << "How many teams will play? (" << Constants::min_teams << "-" << Constants::max_teams << " teams): ";
-        while(number_of_teams < Constants::min_teams || number_of_teams > Constants::max_teams) {
-            cin >> number_of_teams;
+        cout << "How many teams will play? (" << Constants::min_teams << "-" << number_of_players << " teams): ";
+        while(!is_number(str) || atoi(str.c_str()) < Constants::min_teams || atoi(str.c_str()) > number_of_players) {
+            getline(cin, str);
 
-            if(number_of_teams < Constants::min_teams || number_of_teams > Constants::max_teams) {
-                cout << "Invalid input! Try again (" << Constants::min_teams << "-" << Constants::max_teams << " teams): ";
+            if(atoi(str.c_str()) < Constants::min_teams || atoi(str.c_str()) > number_of_players) {
+                cout << "Invalid input! Try again (" << Constants::min_teams << "-" << number_of_players << " teams): ";
             }
         }
 
-        cin.ignore(1024, '\n');
-
-        this->number_of_teams = number_of_teams;
+        number_of_teams = atoi(str.c_str());
 
         server->open(number_of_players - 1);
         server->wait_connections(number_of_players - 1);
