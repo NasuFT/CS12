@@ -1,4 +1,5 @@
 #include "socketstream/socketstream.hh"
+
 #include <iostream>
 #include <string>
 
@@ -10,11 +11,15 @@ class GameClient;
 
 class Constants {
 public:
+    static const int min_teams;
+
     static const int min_port;
     static const int max_port;
 
     static const string port_out_of_range_msg;
 };
+
+const int Constants::min_teams = 2;
 
 const int Constants::min_port = 1024;
 const int Constants::max_port = 65535;
@@ -53,11 +58,21 @@ public:
         return data;
     }
 
+    bool get_server_bool() {
+        bool data;
+        server >> data;
+        return data;
+    }
+
     void send_server_string(string &str) {
         server << str << endl;
     }
 
     void send_server_int(int data) {
+        server << data << endl;
+    }
+
+    void send_server_bool(bool data) {
         server << data << endl;
     }
 
@@ -89,6 +104,7 @@ public:
         welcome_msg = client->get_server_string();
         cout << welcome_msg << '\n';
         connections_left = client->get_server_int();
+        conn_id = client->get_server_int();
 
         for(int i = connections_left; i > 0; i--) {
             string wait_msg = client->get_server_string();
@@ -100,51 +116,19 @@ public:
 
         number_of_players = client->get_server_int();
         number_of_teams = client->get_server_int();
-        conn_id = client->get_server_int();
     }
 
     void initialize_game() {
-        string wait_msg = client->get_server_string();
-        cout << wait_msg << '\n';
-
-        int number_of_clients = client->get_server_int();
-        for(int i = 0; i < number_of_clients; i++) {
-            if(i == conn_id) {
-                string player_class;
-                int team_number;
-
-                cout << "Choose[type] your preferred player class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
-                while(!is_valid_player_class(player_class)) {
-                    cin >> player_class;
-
-                    if(!is_valid_player_class(player_class)) {
-                        cout << "Invalid player class!\n";
-                        cout << "Choose[type] your preferred player class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
-                    }
-                }
-
-                cout << "Choose[type] your preferred team number (1-" << number_of_teams << "): ";
-                while(team_number < 1 || team_number > number_of_teams) {
-                    cin >> team_number;
-
-                    if(team_number < 1 || team_number > number_of_teams) {
-                        cout << "Invalid player class!\n";
-                        cout << "Choose[type] your preferred team number (1-" << number_of_teams << "): ";
-                    }
-                }
-
-                client->send_server_string(player_class);
-                client->send_server_int(team_number);
-            } else {
-                wait_msg = client->get_server_string();
-                cout << wait_msg << '\n';
-            }
-        }
+        
     }
 
     bool is_valid_player_class(string str) {
         if(str == "doggo" || str == "human" || str == "alien" || str == "zombie") return true;
         return false;
+    }
+
+    bool is_valid_team_number(int team_number) {
+        return (Constants::min_teams <= team_number && team_number <= number_of_teams);
     }
 };
 

@@ -633,6 +633,8 @@ public:
         for(unsigned int i = 0; i < clients->size(); i++) {
             clients->at(i).close();
         }
+
+        delete clients;
     }
 
     void open(int connections) {
@@ -640,13 +642,13 @@ public:
     }
 
     void wait_connections(int connections) {
+        clients = new vector<socketstream>(connections);
+
         for(int i = 0; i < connections; i++) {
             string waiting_msg = "Waiting for " + to_string(connections - i) + " more player" + (connections - i == 1 ? "" : "s") + " to connect...";
             cout << waiting_msg << endl;
             send_all_clients(waiting_msg);
 
-            socketstream client;
-            add_client(&client);
             client_ids.push_back(client_ids.size());
 
             server.accept(clients->at(i));
@@ -660,10 +662,6 @@ public:
         string all_connected = "All players connected!";
         cout << all_connected << '\n';
         send_all_clients(all_connected);
-    }
-
-    void add_client(socketstream *client) {
-        clients->push_back(*client);
     }
 
     void send_client(int i, string str) {
@@ -686,6 +684,16 @@ public:
         }
     }
 
+    void send_client(int i, bool data) {
+        clients->at(i) << data << endl;
+    }
+
+    void send_all_clients(bool data) {
+        for(unsigned int i = 0; i < clients->size(); i++) {
+            send_client(i, data);
+        }
+    }
+
     string get_client_string(int i) {
         string str;
         clients->at(i).ignore(1024, '\n');
@@ -695,6 +703,12 @@ public:
 
     int get_client_int(int i) {
         int data;
+        clients->at(i) >> data;
+        return data;
+    }
+
+    bool get_client_bool(int i) {
+        bool data;
         clients->at(i) >> data;
         return data;
     }
@@ -784,12 +798,23 @@ public:
     }
 
     void initialize_game() {
-        string str = "Waiting for Player 1 to pick Player Type and Team Number...";
-        server->send_all_clients(str);
+        vector<string> player_classes = ask_players_player_class();
+        vector<int> team_numbers = ask_players_team_numbers();
 
-        Player *player;
-        string player_class, player_name = "Player 1";
-        int team_number = 0;
+        process_data(player_classes, team_numbers);
+
+        string start_game_msg = "Ready. Let the game start!!!";
+        cout << start_game_msg << '\n';
+        server->send_all_clients(start_game_msg);
+    }
+
+    vector<string> ask_players_player_class() {
+        vector<string> player_classes(number_of_players);
+
+        string wait_msg = "Waiting for Player 1 to pick Player Type...";
+        server->send_all_clients(wait_msg);
+
+        string player_class;
 
         cout << "Choose[type] your preferred player class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
         while(!is_valid_player_class(player_class)) {
@@ -801,55 +826,147 @@ public:
             }
         }
 
-        cout << "Choose[type] your preferred team number (1-" << number_of_teams << "): ";
-        while(team_number < 1 || team_number > number_of_teams) {
-            cin >> team_number;
+        player_classes[0] = player_class;
 
-            if(team_number < 1 || team_number > number_of_teams) {
-                cout << "Invalid player class!\n";
-                cout << "Choose[type] your preferred team number (1-" << number_of_teams << "): ";
-            }
-        }
-
-        if(player_class == "human") player = new Human(player_name, 0);
-        if(player_class == "alien") player = new Alien(player_name, 0);
-        if(player_class == "zombie") player = new Zombie(player_name, 0);
-        if(player_class == "doggo") player = new Doggo(player_name, 0);
-
-        game->add_player(player, team_number - 1);
-
-        //SERVER STUFF
-
-        int number_of_clients = server->get_number_of_clients();
-
-        for(int i = 0, player_number = 1; i < number_of_clients; i++, player_number++) {
-            Player *player;
-            string player_class, player_name = "Player " + to_string(i + 2);
-            int team_number;
-
-            str = "Waiting for Player " + to_string(i + 2) + " to pick Player Type and Team Number...";
-            cout << str;
-            for(unsigned int j = 0; i < server->get_number_of_clients(); j++) {
+        for(int i = 0; i < server->get_number_of_clients(); i++) {
+            string player_class;
+            wait_msg = "Waiting for Player " + to_string(i + 2) + " to pick Player Type...";
+            cout << wait_msg << '\n';
+            for(int j = 0; j < server->get_number_of_clients(); j++) {
                 if(i != j) {
-                    server->send_client(j, str);
+                    server->send_client(j, wait_msg);
                 }
             }
 
-            player_class = server->get_client_string(i);
-            team_number = server->get_client_int(i);
+            string msg = "Choose[type] your preferred player class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
 
-            if(player_class == "human") player = new Human(player_name, i);
-            if(player_class == "alien") player = new Alien(player_name, i);
-            if(player_class == "zombie") player = new Zombie(player_name, i);
-            if(player_class == "doggo") player = new Doggo(player_name, i);
+            server->send_client(i, is_valid_player_class(player_class));
+            server->send_client(i, msg);
 
-            game->add_player(player, team_number - 1);
+            while(!is_valid_player_class(player_class)) {
+                player_class = server->get_client_string(i);
+
+                server->send_client(i, is_valid_player_class(player_class));
+                if(!is_valid_player_class(player_class)) {
+                    string invalid_player_class_msg = "Invalid player class! Please choose among: \"human\", \"alien\", \"zombie\", \"doggo\": ";
+                    server->send_client(i, invalid_player_class_msg);
+                    player_class = server->get_client_string(i);
+                }
+            }
+
+            player_classes[i + 1] = player_class;
+        }
+
+        return player_classes;
+    }
+
+    vector<int> ask_players_team_numbers() {
+        vector<int> team_numbers(number_of_players);
+        fill(team_numbers.begin(), team_numbers.end(), 0);
+
+        server->send_all_clients(is_valid_team_grouping(team_numbers));
+        while(!is_valid_team_grouping(team_numbers)) {
+            string wait_msg = "Waiting for Player 1 to pick Player Type...";
+            server->send_all_clients(wait_msg);
+
+            int team_number = 0;
+
+            cout << "Choose[type] your preferred team number: (1-" << to_string(number_of_teams) << "): ";
+            while(!is_valid_team_number(team_number)) {
+                cin >> team_number;
+
+                if(!is_valid_team_number(team_number)) {
+                    cout << "Invalid team number!\n";
+                    cout << "Choose[type] your preferred team number: (1-" << to_string(number_of_teams) << "): ";
+                }
+            }
+
+            team_numbers[0] = team_number;
+
+            for(int i = 0; i < server->get_number_of_clients(); i++) {
+                int team_number = 0;
+                wait_msg = "Waiting for Player " + to_string(i + 2) + " to pick Team Number...";
+                cout << wait_msg << '\n';
+                for(int j = 0; j < server->get_number_of_clients(); j++) {
+                    if(i != j) {
+                        server->send_client(j, wait_msg);
+                    }
+                }
+
+                string msg = "Choose[type] your preferred team number: (1-" + to_string(number_of_teams) +"): ";
+
+                server->send_client(i, is_valid_team_number(team_number));
+                server->send_client(i, msg);
+
+                while(!is_valid_team_number(team_number)) {
+                    team_number = server->get_client_int(i);
+
+                    server->send_client(i, is_valid_team_number(team_number));
+                    if(!is_valid_team_number(team_number)) {
+                        string invalid_team_number_msg = "Invalid team number! Please choose among: (1-" + to_string(number_of_teams) + "): ";
+                        server->send_client(i, invalid_team_number_msg);
+                        team_number = server->get_client_int(i);
+                    }
+                }
+
+                team_numbers[i + 1] = team_number;
+            }
+
+            server->send_all_clients(is_valid_team_grouping(team_numbers));
+            if(!is_valid_team_grouping(team_numbers)) {
+                string invalid_team_grouping_msg = "Invalid team grouping detected! Team " + to_string(get_no_player_team(team_numbers)) + " has no members! Team numbers will be asked again from all players.";
+                cout << invalid_team_grouping_msg << '\n';
+                server->send_all_clients(invalid_team_grouping_msg);
+            }
         }
     }
 
     bool is_valid_player_class(string str) {
         if(str == "doggo" || str == "human" || str == "alien" || str == "zombie") return true;
         return false;
+    }
+
+    bool is_valid_team_grouping(vector<int> &team_numbers) {
+        int max_team_number = *max_element(team_numbers.begin(), team_numbers.end());
+        if(max_team_number < Constants::min_teams) return false;
+
+        for(int i = max_team_number; i > 1; i++) {
+            for(int j = 0; j < team_numbers.size(); j++) {
+                if(team_numbers[j] == i - 1) break;
+                if(j == team_numbers.size() - 1) return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool is_valid_team_number(int team_number) {
+        return (0 < team_number && team_number <= number_of_teams);
+    }
+
+    int get_no_player_team(vector<int> &team_numbers) {
+        int max_team_number = *max_element(team_numbers.begin(), team_numbers.end());
+        for(int team_number = 1; team_number < max_team_number; team_number++) {
+            if(find(team_numbers.begin(), team_numbers.end(), team_number) == team_numbers.end()) {
+                return team_number;
+            }
+        }
+
+        return -1;
+    }
+
+    void process_data(vector<string> &player_classes, vector<int> &team_numbers) {
+        for(unsigned int i = 0; i < player_classes.size(); i++) {
+            Player *player;
+            string player_name = "Player " + to_string(i + 1);
+
+            if(player_classes[i] == "human") player = new Human(player_name, i);
+            if(player_classes[i] == "alien") player = new Alien(player_name, i);
+            if(player_classes[i] == "zombie") player = new Zombie(player_name, i);
+            if(player_classes[i] == "doggo") player = new Doggo(player_name, i);
+
+            game->add_player(player, team_numbers[i] - 1);
+        }
     }
 
     void input() {
