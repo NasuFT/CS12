@@ -962,9 +962,9 @@ public:
 
     int get_no_player_team(vector<int> &team_numbers) {
         int max_team_number = *max_element(team_numbers.begin(), team_numbers.end());
-        for(int team_number = 1; team_number < max_team_number; team_number++) {
+        for(int team_number = max_team_number; team_number > 1; team_number++) {
             if(find(team_numbers.begin(), team_numbers.end(), team_number - 1) == team_numbers.end()) {
-                return team_number;
+                return team_number - 1;
             }
         }
 
