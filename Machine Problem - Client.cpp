@@ -47,7 +47,6 @@ public:
 
     string get_server_string() {
         string str;
-        server.ignore(1024, '\n');
         getline(server, str);
         return str;
     }
@@ -55,12 +54,14 @@ public:
     int get_server_int() {
         int data;
         server >> data;
+        server.ignore(1024, '\n');
         return data;
     }
 
     bool get_server_bool() {
         bool data;
         server >> data;
+        server.ignore(1024, '\n');
         return data;
     }
 
@@ -84,7 +85,8 @@ public:
 class GameClient {
     Client *client;
 
-    int number_of_players, number_of_teams, conn_id;
+    int number_of_players, number_of_teams, conn_id, team_number;
+    string player_class;
 public:
     GameClient(Client *client) {
         this->client = client;
@@ -119,8 +121,89 @@ public:
     }
 
     void initialize_game() {
-        
+        ask_players_player_class();
+        ask_players_team_number();
     }
+
+    void ask_players_player_class() {
+        string wait_msg;
+        wait_msg = client->get_server_string();
+        cout << wait_msg << '\n';
+
+        for(int i = 0; i < number_of_players - 1; i++) {
+            if(i == conn_id) {
+                player_class = ask_player_class();
+            } else {
+                wait_msg = client->get_server_string();
+                cout << wait_msg << '\n';
+            }
+        }
+    }
+
+    void ask_players_team_number() {
+        bool is_valid_grouping = client->get_server_bool();
+        while(!is_valid_grouping) {
+            string wait_msg = client->get_server_string();
+            int team_number;
+            cout << wait_msg << '\n';
+
+            for(int i = 0; i < number_of_players - 1; i++) {
+                if(i == conn_id) {
+                    team_number = ask_player_team_number();
+                } else {
+                    wait_msg = client->get_server_string();
+                    cout << wait_msg;
+                }
+            }
+
+            is_valid_grouping = client->get_server_bool();
+            if(!is_valid_grouping) {
+                string invalid_team_grouping_msg = client->get_server_string();
+                cout << invalid_team_grouping_msg << '\n';
+            }
+        }
+    }
+
+    int ask_player_team_number() {
+        bool is_valid = client->get_server_bool();
+        string msg = client->get_server_string();
+        cout << msg << '\n';
+        int team_number;
+
+        while(!is_valid) {
+            cin >> team_number;
+            client->send_server_int(team_number);
+            is_valid = client->get_server_bool();
+            if(!is_valid) {
+                string invalid_team_number_msg = client->get_server_string();
+                cout << invalid_team_number_msg << '\n';
+            }
+        }
+
+        cin.ignore(1024, '\n');
+
+        return team_number;
+    }
+
+    string ask_player_class() {
+        bool is_valid = client->get_server_bool();
+        string msg = client->get_server_string();
+        cout << msg << '\n';
+        string player_class;
+
+        while(!is_valid) {
+            getline(cin, player_class);
+            client->send_server_string(player_class);
+
+            is_valid = client->get_server_bool();
+            if(!is_valid) {
+                string error_msg = client->get_server_string();
+                cout << error_msg << '\n';
+            }
+        }
+
+        return player_class;
+    } 
 
     bool is_valid_player_class(string str) {
         if(str == "doggo" || str == "human" || str == "alien" || str == "zombie") return true;

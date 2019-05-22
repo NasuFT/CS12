@@ -1,9 +1,13 @@
-#include "socketstream/socketstream.hh"
 #include <iostream>
+#include <string>
 
 using namespace std;
-using namespace swoope;
 
 int main() {
-    socketstream socket;
+    string str;
+    int n;
+    cin >> n;
+    cout << n << '\n';
+    getline(cin, str);
+    cout << str.length() << '\n';
 }

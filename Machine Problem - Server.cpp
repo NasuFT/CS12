@@ -698,7 +698,6 @@ public:
 
     string get_client_string(int i) {
         string str;
-        clients->at(i).ignore(1024, '\n');
         getline(clients->at(i), str);
         return str;
     }
@@ -706,12 +705,14 @@ public:
     int get_client_int(int i) {
         int data;
         clients->at(i) >> data;
+        clients->at(i).ignore(1024, '\n');
         return data;
     }
 
     bool get_client_bool(int i) {
         bool data;
         clients->at(i) >> data;
+        clients->at(i).ignore(1024, '\n');
         return data;
     }
 
@@ -791,6 +792,8 @@ public:
             }
         }
 
+        cin.ignore(1024, '\n');
+
         this->number_of_teams = number_of_teams;
 
         server->open(number_of_players - 1);
@@ -820,7 +823,7 @@ public:
 
         cout << "Choose[type] your preferred player class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
         while(!is_valid_player_class(player_class)) {
-            cin >> player_class;
+            getline(cin, player_class);
 
             if(!is_valid_player_class(player_class)) {
                 cout << "Invalid player class!\n";
@@ -852,7 +855,6 @@ public:
                 if(!is_valid_player_class(player_class)) {
                     string invalid_player_class_msg = "Invalid player class! Please choose among: \"human\", \"alien\", \"zombie\", \"doggo\": ";
                     server->send_client(i, invalid_player_class_msg);
-                    player_class = server->get_client_string(i);
                 }
             }
 
@@ -883,6 +885,8 @@ public:
                 }
             }
 
+            cin.ignore(1024, '\n');
+
             team_numbers[0] = team_number;
 
             for(int i = 0; i < server->get_number_of_clients(); i++) {
@@ -907,7 +911,6 @@ public:
                     if(!is_valid_team_number(team_number)) {
                         string invalid_team_number_msg = "Invalid team number! Please choose among: (1-" + to_string(number_of_teams) + "): ";
                         server->send_client(i, invalid_team_number_msg);
-                        team_number = server->get_client_int(i);
                     }
                 }
 
