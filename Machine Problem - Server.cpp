@@ -284,7 +284,7 @@ public:
     }
 
     virtual bool is_foot_dead(int i) {
-        return hands[i].is_dead();
+        return feet[i].is_dead();
     }
 
     virtual bool can_act() {
@@ -1269,7 +1269,6 @@ public:
             vector<int> feet;
 
             for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
-                cout << "Dead " << i << ": " << game->get_current_player()->is_foot_dead(i) << '\n';
                 if(!game->get_current_player()->is_foot_dead(i)) {
                     str.clear();
                     ss >> str;
