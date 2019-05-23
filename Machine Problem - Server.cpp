@@ -1188,25 +1188,26 @@ public:
         string command;
 
         if(player_id != 0) server->send_client(player_id - 1, is_valid_command(command));
+        vector<string> command_msg(5);
+        command_msg[0] = "Your turn: Please choose from the following actions: ";
+        command_msg[1] = "--- tap H/F[body_letter] [target_player] H/F[target_body_letter]: e.g. \"tap HA 2 FB\"";
+        command_msg[2] = "--- disthands [hand_1_fingers] [hand_2_fingers] ...: e.g. \"disthands 3 2 3\"";
+        command_msg[3] = "--- distfeet [feet_1_toes] [feet_2_toes] ...: e.g. \"distfeet 1 3 1\"";
+        command_msg[4] = "Input: (Action " + to_string(action_number + 1) + "): ";
+
+        if(player_id == 0) {
+            for(int i = 0; i < 5; i++) {
+                cout << command_msg[i] << '\n';
+            }
+        } else {
+            server->send_client(player_id - 1, command_msg);
+        }
+
         while(!is_valid_command(command)) {
-            vector<string> command_msg(5);
-            command_msg[0] = "Your turn: Please choose from the following actions: ";
-            command_msg[1] = "--- tap H/F[body_letter] [target_player] H/F[target_body_letter]: e.g. \"tap HA 2 FB\"";
-            command_msg[2] = "--- disthands [hand_1_fingers] [hand_2_fingers] ...: e.g. \"disthands 3 2 3\"";
-            command_msg[3] = "--- distfeet [feet_1_toes] [feet_2_toes] ...: e.g. \"distfeet 1 3 1\"";
-            command_msg[4] = "Input: (Action " + to_string(action_number + 1) + "): ";
-
             if(player_id == 0) {
-                for(int i = 0; i < 5; i++) {
-                    cout << command_msg[i] << '\n';
-                }
-
                 getline(cin, command);
             } else {
-                int client_id = player_id - 1;
-                
-                server->send_client(client_id, command_msg);
-                command = server->get_client_string(client_id);
+                command = server->get_client_string(player_id - 1);
             }
 
             if(player_id != 0) server->send_client(player_id - 1, is_valid_command(command));
@@ -1282,6 +1283,8 @@ public:
     }
 
     bool is_valid_command(string &command) {
+        cout << "Command Validation started!" << '\n';
+
         stringstream ss(command);
         string str;
 
@@ -1377,6 +1380,7 @@ public:
             for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
                 if(!game->get_current_player()->is_foot_dead(i)) {
                     if(game->get_current_player()->get_foot_toes(i) != feet[i]) {
+                        cout << "Command Validation successful!" << '\n';
                         return true;
                     }
                 }
