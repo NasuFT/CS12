@@ -823,11 +823,9 @@ public:
     void send_client(int i, vector<string> &vec) {
         int vec_size = vec.size();
         send_client(i, vec_size);
-        cout << "Size: " << vec_size << '\n';
 
-        for(int i = 0; i < vec_size; i++) {
-            cout << "Status: " << i << '\n';
-            send_client(i, vec[i]);
+        for(int j = 0; j < vec_size; j++) {
+            send_client(i, vec[j]);
         }
     }
 
