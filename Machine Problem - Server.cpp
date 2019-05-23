@@ -542,7 +542,7 @@ public:
         current_player = (current_player + 1) % players.size();
     }
 
-    string &telegraph_next_player() {
+    string telegraph_next_player() {
         if(!can_act()) return get_current_player()->get_player_name();
 
         int next_player = current_player;
@@ -1151,7 +1151,7 @@ public:
         for(int i = 0; i < number_of_players; i++) {
             for(int i = 0; i < server->get_number_of_clients(); i++) {
                 bool is_player_i_turn;
-                is_player_i_turn = (game->get_current_player()->get_player_id == i + 1);
+                is_player_i_turn = (game->get_current_player()->get_player_id() == i + 1);
 
                 server->send_client(i, is_player_i_turn);
             }
@@ -1307,7 +1307,7 @@ public:
             ss >> str;
             if(str.length() != 2) return false;
             if(str[0] != 'H' && str[0] != 'F') return false;
-            int body_number = str[1] - 'A';
+            body_number = str[1] - 'A';
             if(str[0] == 'H') {
                 if(!(0 <= body_number && body_number < game->get_player(target_id)->get_number_of_hands() && !game->get_player(target_id)->is_hand_dead(body_number))) {
                     return false;
