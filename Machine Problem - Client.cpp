@@ -1,6 +1,7 @@
 #include "socketstream/socketstream.hh"
 
 #include <iostream>
+#include <vector>
 #include <string>
 
 using namespace std;
@@ -105,6 +106,32 @@ public:
     void run() {
         initialize_connection();
         initialize_game();
+
+        bool is_game_over = client->get_server_bool();
+        while(!is_game_over) {
+            print_game_status();
+        }
+    }
+
+    vector<string> get_game_status() {
+        int status_size = client->get_server_int();
+        vector<string> status(status_size);
+
+        for(int i = 0; i < status_size; i++) {
+            status[i] = client->get_server_string();
+        }
+
+        return status;
+    }
+
+    void print_game_status() {
+        vector<string> game_status = get_game_status();
+
+        for(unsigned int i = 0; i < game_status.size(); i++) {
+            cout << game_status[i] << '\n';
+        }
+
+        cout << '\n';
     }
 
     void initialize_connection() {
@@ -133,6 +160,8 @@ public:
     void initialize_game() {
         ask_players_player_class();
         ask_players_team_number();
+        string start_game_msg = client->get_server_string();
+        cout << start_game_msg << '\n';
     }
 
     void ask_players_player_class() {

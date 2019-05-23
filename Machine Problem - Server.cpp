@@ -75,6 +75,7 @@ public:
     static const string port_out_of_range_msg;
     static const string players_out_of_range_msg;
     static const string teams_out_of_range_msg;
+    static const string start_game_msg;
 };
 
 /// BODY PART CONSTANTS
@@ -129,10 +130,11 @@ const int Constants::max_teams = Constants::max_players;
 const int Constants::min_port = 1024;
 const int Constants::max_port = 65535;
 
-/// ERROR MESSAGES
+/// MESSAGES
 const string Constants::port_out_of_range_msg = "Invalid Port! Valid Ports Range: (" + to_string(Constants::min_port) + "-" + to_string(Constants::max_port) + ")";
 const string Constants::players_out_of_range_msg = "Invalid Number of Players! Valid Number of Players Range: (" + to_string(Constants::min_players) + "-" + to_string(Constants::max_players) + ")";
 const string Constants::teams_out_of_range_msg = "Invalid Number of Teams! Valid Number of Teams Range: (" + to_string(Constants::min_teams) + "-" + to_string(Constants::max_teams) + ")";
+const string Constants::start_game_msg = "Ready. Let the game start!!!";
 
 /// HELPER FUNCTIONS
 bool is_number(string &str) {
@@ -607,18 +609,21 @@ public:
         }
     }
 
-    string get_game_status() {
-        string str;
+    vector<string> get_game_status() {
+        vector<string> game_status(teams.size());
 
         for(unsigned int i = 0; i < teams.size(); i++) {
+            string str;
+
             if(teams[i].get_number_of_players() > 0) {
                 str += "Team " + to_string(i + 1) + ": ";
                 str += teams[i].get_team_status();
-                str += '\n';
             }
+
+            game_status[i] = str;
         }
 
-        return str;
+        return game_status;
     }
 };
 
@@ -634,13 +639,13 @@ class Server {
     int port;
 public:
     Server(string port) {
-        this->port = atoi(port.c_str());
-        current_clients = 0;
-
-        if(!check_port_validity(this->port)) {
+        if(!check_port_validity(port)) {
             cout << Constants::port_out_of_range_msg << endl;
             throw out_of_range(Constants::port_out_of_range_msg + " - Port Received: " + port);
         }
+
+        this->port = atoi(port.c_str());
+        current_clients = 0;
     }
 
     ~Server() {
@@ -731,8 +736,8 @@ public:
         return clients->size();
     }
 
-    bool check_port_validity(int port) {
-        return (Constants::min_port <= port && port <= Constants::max_port);
+    bool check_port_validity(string &port) {
+        return (is_number(port) && Constants::min_port <= atoi(port.c_str()) && atoi(port.c_str()) <= Constants::max_port);
     }
 
     socketstream* get_socket() {
@@ -754,8 +759,20 @@ public:
         this->server = server;
     }
 
+    void send_game_status_all() {
+        vector<string> status = game->get_game_status();
+        int vector_size = status.size();
+
+        server->send_all_clients(vector_size);
+        for(int i = 0; i < vector_size; i++) {
+            cout << status[i] << '\n';
+            server->send_all_clients(status[i]);
+        }
+    }
+
     void print_game_status() {
-        cout << game->get_game_status() << '\n';
+        send_game_status_all();
+        cout << '\n';
     }
 
     void print_game_winner() {
@@ -770,6 +787,7 @@ public:
         initialize_server();
         initialize_game();
 
+        server->send_all_clients(game->is_game_over());
         while(!game->is_game_over()) {
             print_game_status();
             input();
@@ -818,7 +836,7 @@ public:
 
         process_data(player_classes, team_numbers);
 
-        string start_game_msg = "Ready. Let the game start!!!";
+        string start_game_msg = Constants::start_game_msg;
         cout << start_game_msg << '\n';
         server->send_all_clients(start_game_msg);
     }
