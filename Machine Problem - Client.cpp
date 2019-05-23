@@ -154,7 +154,7 @@ public:
         bool is_turn = client->get_server_bool();
         int actions = client->get_server_int();
         
-        if(is_turn) {
+        if(!is_turn) {
             string wait_msg = client->get_server_string();
             cout << wait_msg << '\n';
         } else {

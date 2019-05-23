@@ -1291,10 +1291,12 @@ public:
         ss >> str;
         
         if(str == "tap") {
+            cout << "Part 0: Tap" << '\n';
             str.clear();
             ss >> str;
             if(str.length() != 2) return false;
 
+            cout << "Part 1: Tap" << '\n';
             if(str[0] != 'H' && str[0] != 'F') return false;
             int body_number = str[1] - 'A';
             if(str[0] == 'H') {
@@ -1307,6 +1309,7 @@ public:
                 }
             }
 
+            cout << "Part 2: Tap" << '\n';
             str.clear();
             ss >> str;
             if(!(is_number(str) && 0 < atoi(str.c_str()) && atoi(str.c_str()) <= number_of_players && game->get_current_player()->get_team_number() != game->get_player(atoi(str.c_str()))->get_team_number() && !game->get_player(atoi(str.c_str()) - 1)->is_dead())) {
@@ -1314,6 +1317,7 @@ public:
             }
             int target_id = atoi(str.c_str()) - 1;
 
+            cout << "Part 3: Tap" << '\n';
             str.clear();
             ss >> str;
             if(str.length() != 2) return false;
@@ -1329,11 +1333,12 @@ public:
                 }
             }
 
+            cout << "Part 4: Tap" << '\n';
             str.clear();
             ss >> str;
             if(str != "") return false;
+            cout << "Part 5: Tap" << '\n';
             return true;
-
         } else if(str == "disthands") {
             if(game->get_current_player()->get_alive_hands() <= 1) return false;
             vector<int> hands;
