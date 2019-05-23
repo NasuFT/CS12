@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <algorithm>
 #include <stdexcept>
@@ -238,9 +239,11 @@ protected:
 
     int actions_per_turn;
     int player_id;
+    int team_number;
     string player_class;
     string player_name;
     bool is_skipped;
+    int max_fingers, max_toes;
 public:
     Player(int _hands, int _feet, int _fingers, int _toes, const string &_player_class, int _actions_per_turn, const string &_player_name, int _player_id) {
         for(int i = 0; i < _hands; i++) {
@@ -255,6 +258,8 @@ public:
             feet[i].set_owner(this);
         }
 
+        max_fingers = _fingers;
+        max_toes = _toes;
         actions_per_turn = _actions_per_turn;
         player_class = _player_class;
         player_name = _player_name;
@@ -272,6 +277,14 @@ public:
         }
 
         return true;
+    }
+
+    virtual bool is_hand_dead(int i) {
+        return hands[i].is_dead();
+    }
+
+    virtual bool is_foot_dead(int i) {
+        return hands[i].is_dead();
     }
 
     virtual bool can_act() {
@@ -312,6 +325,26 @@ public:
         return feet.size();
     }
 
+    virtual int get_alive_hands() {
+        int alive = 0;
+
+        for(unsigned int i = 0; i < hands.size(); i++) {
+            if(!hands[i].is_dead()) alive++;
+        }
+
+        return alive;
+    }
+
+    virtual int get_alive_feet() {
+        int alive = 0;
+
+        for(unsigned int i = 0; i < feet.size(); i++) {
+            if(!feet[i].is_dead()) alive++;
+        }
+
+        return alive;
+    }
+
     virtual void set_hand_fingers(int hand_number, int value) {
         hands[hand_number].set_value(value);
         if(hands[hand_number].trigger_death_flag()) on_hand_death();
@@ -336,6 +369,22 @@ public:
 
     virtual int get_player_id() {
         return player_id;
+    }
+
+    virtual void set_team_number(int team_number) {
+        this->team_number = team_number;
+    }
+
+    virtual int get_team_number() {
+        return team_number;
+    }
+
+    virtual int get_max_fingers() {
+        return max_fingers;
+    }
+
+    virtual int get_max_toes() {
+        return max_toes;
     }
 
     virtual void on_hand_death() {
@@ -370,6 +419,12 @@ public:
             if(feet[i].is_dead()) str += "X";
             else str += to_string(feet[i].get_value());
         }
+
+        str += ":";
+
+        if(!can_act()) str += "skip";
+
+        str += ")";
 
         return str;
     }
@@ -439,8 +494,9 @@ class Team {
 private:
     vector<Player*> players;
     int current_player;
+    int next_player_number;
 public:
-    Team(): current_player(0) {
+    Team(): current_player(0), next_player_number(0) {
 
     }
 
@@ -450,6 +506,10 @@ public:
 
     Player* get_current_player() {
         return players[current_player];
+    }
+
+    Player* get_player(int i) {
+        return players[i];
     }
 
     int get_number_of_players() {
@@ -482,15 +542,29 @@ public:
         current_player = (current_player + 1) % players.size();
     }
 
+    string &telegraph_next_player() {
+        if(!can_act()) return get_current_player()->get_player_name();
+
+        int next_player = current_player;
+
+        while(get_player(next_player)->is_dead() || !get_player(next_player)->can_act()) {
+            next_player = (next_player + 1) % players.size();
+        }
+
+        return get_player(next_player)->get_player_name();
+    }
+
     string get_team_status() {
         string str;
 
         for(unsigned int i = 0; i < players.size(); i++) {
-            str += "P" + to_string(players[i]->get_player_id() + 1) + players[i]->get_player_class()[0] + " ";
+            str += "P" + to_string(players[i]->get_player_id() + 1) + players[i]->get_player_class()[0] + "T" + to_string(players[i]->get_team_number() + 1) + " ";
             str += players[i]->get_player_status();
 
             if(i != players.size() - 1) str += " | ";
         }
+
+        str += "Next Player: " + telegraph_next_player();
 
         return str;
     }
@@ -504,6 +578,9 @@ class Game {
 private:
     vector<Player*> players;
     vector<Team> teams;
+
+    vector<string> skipped_players;
+    vector<string> skipped_teams;
 
     int current_team;
     int winner;
@@ -522,10 +599,15 @@ public:
     void add_player(Player* player, int team_number) {
         players.push_back(player);
         teams[team_number].add_player(player);
+        player->set_team_number(team_number);
     }
 
     Player* get_current_player() {
         return teams[current_team].get_current_player();
+    }
+
+    Player* get_player(int player_id) {
+        return players[player_id];
     }
 
     int get_dead_teams() {
@@ -561,9 +643,14 @@ public:
         teams[current_team].next_player();
         next_team();
 
+        skipped_teams.clear();
+        skipped_players.clear();
+
         while(teams[current_team].is_dead() || !teams[current_team].can_act()) {
             if(!teams[current_team].can_act()) {
                 teams[current_team].skip();
+                string str = "Team " + to_string(current_team + 1) + " has been skipped.";
+                skipped_teams.push_back(str);
             }
 
             next_team();
@@ -572,10 +659,20 @@ public:
         while(get_current_player()->is_dead() || !get_current_player()->can_act()) {
             if(!get_current_player()->can_act()) {
                 get_current_player()->skip();
+                string str = "Player " + to_string(get_current_player()->get_player_id() + 1) + " has been skipped.";
+                skipped_players.push_back(str);
             }
 
             teams[current_team].next_player();
         }
+    }
+
+    vector<string> &get_skipped_players_msg() {
+        return skipped_players;
+    }
+
+    vector<string> &get_skipped_teams_msg() {
+        return skipped_teams;
     }
 
     void tap(string &player_body_part, int player_body_number, int target_id, string &target_body_part, int target_body_number) {
@@ -597,20 +694,20 @@ public:
         players[target_id]->on_target(get_current_player());
     }
 
-    void disthands(vector<int> hands) {
+    void disthands(vector<int> &hands) {
         for(unsigned int i = 0; i < get_current_player()->get_number_of_hands(); i++) {
             get_current_player()->set_hand_fingers(i, hands[i]);
         }
     }
 
-    void distfeet(vector<int> feet) {
+    void distfeet(vector<int> &feet) {
         for(unsigned int i = 0; i < get_current_player()->get_number_of_feet(); i++) {
             get_current_player()->set_foot_toes(i, feet[i]);
         }
     }
 
     vector<string> get_game_status() {
-        vector<string> game_status(teams.size());
+        vector<string> game_status(teams.size() + 1);
 
         for(unsigned int i = 0; i < teams.size(); i++) {
             string str;
@@ -622,6 +719,9 @@ public:
 
             game_status[i] = str;
         }
+
+        string str = "Current Player: " + get_current_player()->get_player_name();
+        game_status[teams.size()] = str;
 
         return game_status;
     }
@@ -712,6 +812,21 @@ public:
         }
     }
 
+    void send_client(int i, vector<string> vec) {
+        int vec_size = vec.size();
+        send_client(i, vec_size);
+
+        for(int i = 0; i < vec_size; i++) {
+            send_client(i, vec[i]);
+        }
+    }
+
+    void send_all_clients(vector<string> vec) {
+        for(unsigned int i = 0; i < current_clients; i++) {
+            send_client(i, vec);
+        }
+    }
+
     string get_client_string(int i) {
         string str;
         getline(clients->at(i), str);
@@ -761,12 +876,10 @@ public:
 
     void send_game_status_all() {
         vector<string> status = game->get_game_status();
-        int vector_size = status.size();
-
-        server->send_all_clients(vector_size);
-        for(int i = 0; i < vector_size; i++) {
+        server->send_all_clients(status);
+        
+        for(unsigned int i = 0; i < status.size(); i++) {
             cout << status[i] << '\n';
-            server->send_all_clients(status[i]);
         }
     }
 
@@ -776,11 +889,26 @@ public:
     }
 
     void print_game_winner() {
-        string str = "Team " + to_string(game->get_winning_team() + 1) + " wins!\n";
+        int winning_team = game->get_winning_team();
 
-        cout << "Team " << game->get_winning_team() + 1 << " wins!\n";
+        string win_msg = "Congratulations! Team " + to_string(winning_team + 1) + " wins!";
+        string lose_msg = "You lose! Team " + to_string(winning_team + 1) + " wins!";
 
-        server->send_all_clients(str);
+        for(int i = 0; i < number_of_players; i++) {
+            if(i == 0) {
+                if(game->get_player(0)->get_team_number() == winning_team) {
+                    cout << win_msg << '\n';
+                } else {
+                    cout << lose_msg << '\n';
+                }
+            } else {
+                if(game->get_player(i)->get_team_number() == winning_team) {
+                    server->send_client(i - 1, win_msg);
+                } else {
+                    server->send_client(i - 1, lose_msg);
+                }
+            }
+        }
     }
 
     void run() {
@@ -792,10 +920,28 @@ public:
             print_game_status();
             input();
             game->end_turn();
+            print_skipped();
+            server->send_all_clients(game->is_game_over());
         }
 
         print_game_status();
         print_game_winner();
+    }
+
+    void print_skipped() {
+        vector<string> skipped_teams = game->get_skipped_teams_msg();
+        vector<string> skipped_players = game->get_skipped_players_msg();
+
+        server->send_all_clients(skipped_teams);
+        server->send_all_clients(skipped_players);
+
+        for(unsigned int i = 0; i < skipped_teams.size(); i++) {
+            cout << skipped_teams[i] << '\n';
+        }
+
+        for(unsigned int i = 0; i < skipped_players.size(); i++) {
+            cout << skipped_players[i] << '\n';
+        }
     }
 
     void initialize_server() {
@@ -1002,53 +1148,236 @@ public:
     }
 
     void input() {
-        for(int i = 0; i < game->get_current_player()->get_actions_per_turn(); i++) {
-            string command;
-            cin >> command;
-            run_command(command);
+        for(int i = 0; i < number_of_players; i++) {
+            for(int i = 0; i < server->get_number_of_clients(); i++) {
+                bool is_player_i_turn;
+                is_player_i_turn = (game->get_current_player()->get_player_id == i + 1);
+
+                server->send_client(i, is_player_i_turn);
+            }
+
+            server->send_client(i, game->get_current_player()->get_actions_per_turn());
+            
+            for(int j = 0; j < game->get_current_player()->get_actions_per_turn(); j++) {
+                string hold_msg = "Waiting for " + game->get_current_player()->get_player_name() + ": Action " + to_string(j + 1) + "...";
+
+                if(game->get_current_player()->get_player_id() == 0) {
+                    server->send_all_clients(hold_msg);
+                } else {
+                    cout << hold_msg << '\n';
+                    for(int k = 0; k < server->get_number_of_clients(); k++) {
+                        if(j != k) server->send_client(k, hold_msg);
+                    }
+                }
+
+                string command = ask_current_player_command(game->get_current_player()->get_player_id(), j);
+                execute_command(command);
+            }
         }
     }
 
-    void run_command(string &command) {
-        if(command == "tap") {
-            string player_command, target_command, player_body_part, target_body_part;
-            int target_number, target_id, player_body_number, target_body_number;
-            cin >> player_command >> target_number >> target_command;
+    string ask_current_player_command(int player_id, int action_number) {
+        string command;
 
+        if(player_id != 0) server->send_client(player_id - 1, is_valid_command(command));
+        while(!is_valid_command(command)) {
+            vector<string> command_msg(5);
+            command_msg[0] = "Your turn: Please choose from the following actions: ";
+            command_msg[1] = "--- tap H/F[body_letter] [target_player] H/F[target_body_letter]: e.g. \"tap HA 2 FB\"";
+            command_msg[2] = "--- disthands [hand_1_fingers] [hand_2_fingers] ...: e.g. \"disthands 3 2 3\"";
+            command_msg[3] = "--- distfeet [feet_1_toes] [feet_2_toes] ...: e.g. \"distfeet 1 3 1\"";
+            command_msg[4] = "Input: (Action " + to_string(action_number + 1) + "): ";
 
-            target_id = target_number - 1;
+            if(player_id == 0) {
+                for(int i = 0; i < 5; i++) {
+                    cout << command_msg[i] << '\n';
+                }
 
-            if(player_command[0] == 'H') player_body_part = "hand";
-            else if(player_command[0] == 'F') player_body_part = "foot";
-
-            if(target_command[0] == 'H') target_body_part = "hand";
-            else if(target_command[0] == 'F') target_body_part = "foot";
-
-            player_body_number = player_command[1] - 'A';
-            target_body_number = target_command[1] - 'A';
-
-            game->tap(player_body_part, player_body_number, target_id, target_body_part, target_body_number);
-        } else if(command == "disthands") {
-            vector<int> hands(game->get_current_player()->get_number_of_hands());
-
-
-            for(unsigned int i = 0; i < hands.size(); i++) {
-                cin >> hands[i];
+                getline(cin, command);
+            } else {
+                int client_id = player_id - 1;
+                
+                server->send_client(client_id, command_msg);
+                command = server->get_client_string(client_id);
             }
 
+            if(player_id != 0) server->send_client(player_id - 1, is_valid_command(command));
+
+            if(!is_valid_command(command)) {
+                string error_msg = "Invalid command! Please try again: ";
+                if(player_id == 0) cout << error_msg;
+                else server->send_client(player_id - 1, error_msg);
+            }
+        }
+
+        return command;
+    }
+
+    void execute_command(string &command) {
+        string str;
+        stringstream ss(command);
+        ss >> str;
+
+        if(str == "tap") {
+            string player_body_part, target_body_part;
+            int target_id, player_body_part_number, target_body_part_number;
+
+            str.clear();
+            ss >> str;
+
+            if(str[0] == 'H') player_body_part = "hand";
+            else if(str[0] == 'F') player_body_part = "foot";
+
+            player_body_part_number = str[1] - 'A';
+
+            str.clear();
+            ss >> str;
+
+            target_id = atoi(str.c_str()) - 1;
+
+            str.clear();
+            ss >> str;
+
+            if(str[0] == 'H') target_body_part = "hand";
+            else if(str[0] == 'F') target_body_part = "foot";
+
+            target_body_part_number = str[1] - 'A';
+
+            game->tap(player_body_part, player_body_part_number, target_id, target_body_part, target_body_part_number);
+        } else if(str == "disthands") {
+            vector<int> hands(game->get_current_player()->get_number_of_hands());
+            fill(hands.begin(), hands.end(), game->get_current_player()->get_max_fingers());
+
+            for(int i = 0; i < game->get_current_player()->get_number_of_hands(); i++) {
+                if(!game->get_current_player()->is_hand_dead(i)) {
+                    str.clear();
+                    ss >> str;
+                    hands[i] = atoi(str.c_str());
+                }
+            }
 
             game->disthands(hands);
-        } else if(command == "distfeet") {
+        } else if(str == "distfeet") {
             vector<int> feet(game->get_current_player()->get_number_of_feet());
+            fill(feet.begin(), feet.end(), game->get_current_player()->get_max_toes());
 
-
-            for(unsigned int i = 0; i < feet.size(); i++) {
-                cin >> feet[i];
+            for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
+                if(!game->get_current_player()->is_foot_dead(i)) {
+                    str.clear();
+                    ss >> str;
+                    feet[i] = atoi(str.c_str());
+                }
             }
-
 
             game->distfeet(feet);
         }
+    }
+
+    bool is_valid_command(string &command) {
+        stringstream ss(command);
+        string str;
+
+        ss >> str;
+        
+        if(str == "tap") {
+            str.clear();
+            ss >> str;
+            if(str.length() != 2) return false;
+
+            if(str[0] != 'H' && str[0] != 'F') return false;
+            int body_number = str[1] - 'A';
+            if(str[0] == 'H') {
+                if(!(0 <= body_number && body_number < game->get_current_player()->get_number_of_hands() && !game->get_current_player()->is_hand_dead(body_number))) {
+                    return false;
+                }
+            } else if(str[0] == 'F') {
+                if(!(0 <= body_number && body_number < game->get_current_player()->get_number_of_feet() && !game->get_current_player()->is_foot_dead(body_number))) {
+                    return false;
+                }
+            }
+
+            str.clear();
+            ss >> str;
+            if(!(is_number(str) && 0 < atoi(str.c_str()) && atoi(str.c_str()) <= number_of_players && game->get_current_player()->get_team_number() != game->get_player(atoi(str.c_str()))->get_team_number() && !game->get_player(atoi(str.c_str()) - 1)->is_dead())) {
+                return false;
+            }
+            int target_id = atoi(str.c_str()) - 1;
+
+            str.clear();
+            ss >> str;
+            if(str.length() != 2) return false;
+            if(str[0] != 'H' && str[0] != 'F') return false;
+            int body_number = str[1] - 'A';
+            if(str[0] == 'H') {
+                if(!(0 <= body_number && body_number < game->get_player(target_id)->get_number_of_hands() && !game->get_player(target_id)->is_hand_dead(body_number))) {
+                    return false;
+                }
+            } else if(str[0] == 'F') {
+                if(!(0 <= body_number && body_number < game->get_player(target_id)->get_number_of_feet() && !game->get_player(target_id)->is_foot_dead(body_number))) {
+                    return false;
+                }
+            }
+
+            str.clear();
+            ss >> str;
+            if(str != "") return false;
+            return true;
+
+        } else if(str == "disthands") {
+            if(game->get_current_player()->get_alive_hands() <= 1) return false;
+            vector<int> hands;
+
+            while(ss) {
+                str.clear();
+                ss >> str;
+                if(str == "") break;
+                if(is_number(str) && 0 <= atoi(str.c_str()) && atoi(str.c_str()) < game->get_current_player()->get_max_fingers()) {
+                    hands.push_back(atoi(str.c_str()));
+                } else {
+                    return false;
+                }
+            }
+
+            if(hands.size() != game->get_current_player()->get_alive_hands()) return false;
+
+            for(int i = 0; i < game->get_current_player()->get_number_of_hands(); i++) {
+                if(!game->get_current_player()->is_hand_dead(i)) {
+                    if(game->get_current_player()->get_hand_fingers(i) != hands[i]) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        } else if(str == "distfeet") {
+            if(game->get_current_player()->get_alive_feet() <= 1) return false;
+            vector<int> feet;
+
+            while(ss) {
+                str.clear();
+                ss >> str;
+                if(str == "") break;
+                if(is_number(str) && 0 < atoi(str.c_str()) && atoi(str.c_str()) < game->get_current_player()->get_max_toes()) {
+                    feet.push_back(atoi(str.c_str()));
+                } else {
+                    return false;
+                }
+            }
+
+            if(feet.size() != game->get_current_player()->get_alive_feet()) return false;
+
+            for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
+                if(!game->get_current_player()->is_foot_dead(i)) {
+                    if(game->get_current_player()->get_foot_toes(i) != feet[i]) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        return false;
     }
 };
 

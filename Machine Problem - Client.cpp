@@ -76,6 +76,17 @@ public:
         return data;
     }
 
+    vector<string> get_server_vector_string() {
+        int vec_size = get_server_int();
+        vector<string> vec(vec_size);
+
+        for(int i = 0; i < vec_size; i++) {
+            vec[i] = get_server_string();
+        }
+
+        return vec;
+    }
+
     void send_server_string(string &str) {
         server << str << endl;
     }
@@ -110,22 +121,70 @@ public:
         bool is_game_over = client->get_server_bool();
         while(!is_game_over) {
             print_game_status();
+            input();
+            print_skipped();
+
+            is_game_over = client->get_server_bool();
+        }
+
+        print_game_status();
+        print_game_winner();
+    }
+
+    void print_game_winner() {
+        string msg = client->get_server_string();
+
+        cout << msg << '\n';
+    }
+
+    void print_skipped() {
+        vector<string> skipped_teams = client->get_server_vector_string();
+        vector<string> skipped_players = client->get_server_vector_string();
+
+        for(unsigned int i = 0; i < skipped_teams.size(); i++) {
+            cout << skipped_teams[i] << '\n';
+        }
+
+        for(unsigned int i = 0; i < skipped_players.size(); i++) {
+            cout << skipped_players[i] << '\n';
         }
     }
 
-    vector<string> get_game_status() {
-        int status_size = client->get_server_int();
-        vector<string> status(status_size);
+    void input() {
+        bool is_turn = client->get_server_bool();
+        
+        if(is_turn) {
+            string wait_msg = client->get_server_string();
+            cout << wait_msg << '\n';
+        } else {
+            int actions = client->get_server_int();
 
-        for(int i = 0; i < status_size; i++) {
-            status[i] = client->get_server_string();
+            for(int i = 0; i < actions; i++) {
+                bool is_valid = client->get_server_bool();
+                string command;
+
+                while(!is_valid) {
+                    vector<string> instruction_msg = client->get_server_vector_string();
+
+                    for(unsigned int i = 0; i < instruction_msg.size(); i++) {
+                        cout << instruction_msg[i] << '\n';
+                    }
+
+                    getline(cin, command);
+                    client->send_server_string(command);
+
+                    is_valid = client->get_server_bool();
+
+                    if(!is_valid) {
+                        string error_msg = client->get_server_string();
+                    }
+                }
+            }
         }
-
-        return status;
     }
 
     void print_game_status() {
-        vector<string> game_status = get_game_status();
+        vector<string> game_status = client->get_server_vector_string();
 
         for(unsigned int i = 0; i < game_status.size(); i++) {
             cout << game_status[i] << '\n';
