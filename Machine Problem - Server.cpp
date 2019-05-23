@@ -1163,24 +1163,24 @@ public:
 
                 server->send_client(i, is_player_i_turn);
             }
+        }
 
-            if(i != 0) server->send_client(i - 1, game->get_current_player()->get_actions_per_turn());
-            
-            for(int j = 0; j < game->get_current_player()->get_actions_per_turn(); j++) {
-                string hold_msg = "Waiting for " + game->get_current_player()->get_player_name() + ": Action " + to_string(j + 1) + "...";
+        server->send_all_clients(game->get_current_player()->get_actions_per_turn());
+        
+        for(int j = 0; j < game->get_current_player()->get_actions_per_turn(); j++) {
+            string hold_msg = "Waiting for " + game->get_current_player()->get_player_name() + ": Action " + to_string(j + 1) + "...";
 
-                if(game->get_current_player()->get_player_id() == 0) {
-                    server->send_all_clients(hold_msg);
-                } else {
-                    cout << hold_msg << '\n';
-                    for(int k = 0; k < server->get_number_of_clients(); k++) {
-                        if(j != k) server->send_client(k, hold_msg);
-                    }
+            if(game->get_current_player()->get_player_id() == 0) {
+                server->send_all_clients(hold_msg);
+            } else {
+                cout << hold_msg << '\n';
+                for(int k = 0; k < server->get_number_of_clients(); k++) {
+                    if(j != k) server->send_client(k, hold_msg);
                 }
-
-                string command = ask_current_player_command(game->get_current_player()->get_player_id(), j);
-                execute_command(command);
             }
+
+            string command = ask_current_player_command(game->get_current_player()->get_player_id(), j);
+            execute_command(command);
         }
     }
 

@@ -152,13 +152,12 @@ public:
 
     void input() {
         bool is_turn = client->get_server_bool();
+        int actions = client->get_server_int();
         
         if(is_turn) {
             string wait_msg = client->get_server_string();
             cout << wait_msg << '\n';
         } else {
-            int actions = client->get_server_int();
-
             for(int i = 0; i < actions; i++) {
                 bool is_valid = client->get_server_bool();
                 string command;
