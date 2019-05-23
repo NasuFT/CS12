@@ -564,7 +564,7 @@ public:
             if(i != players.size() - 1) str += " | ";
         }
 
-        str += "Next Player: " + telegraph_next_player();
+        str += " Next Player: " + telegraph_next_player();
 
         return str;
     }
@@ -667,6 +667,14 @@ public:
         }
     }
 
+    int get_active_teams() {
+        int active_teams;
+
+        for(unsigned int i = 0; i < teams.size(); i++) {
+            if(teams[i].get_number_of_players() > 0) active_teams++;
+        }
+    }
+
     vector<string> &get_skipped_players_msg() {
         return skipped_players;
     }
@@ -707,7 +715,7 @@ public:
     }
 
     vector<string> get_game_status() {
-        vector<string> game_status(teams.size() + 1);
+        vector<string> game_status;
 
         for(unsigned int i = 0; i < teams.size(); i++) {
             string str;
@@ -715,13 +723,12 @@ public:
             if(teams[i].get_number_of_players() > 0) {
                 str += "Team " + to_string(i + 1) + ": ";
                 str += teams[i].get_team_status();
+                game_status.push_back(str);
             }
-
-            game_status[i] = str;
         }
 
         string str = "Current Player: " + get_current_player()->get_player_name();
-        game_status[teams.size()] = str;
+        game_status.push_back(str);
 
         return game_status;
     }
@@ -1156,7 +1163,7 @@ public:
                 server->send_client(i, is_player_i_turn);
             }
 
-            server->send_client(i, game->get_current_player()->get_actions_per_turn());
+            if(i != 0) server->send_client(i - 1, game->get_current_player()->get_actions_per_turn());
             
             for(int j = 0; j < game->get_current_player()->get_actions_per_turn(); j++) {
                 string hold_msg = "Waiting for " + game->get_current_player()->get_player_name() + ": Action " + to_string(j + 1) + "...";
