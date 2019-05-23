@@ -1269,6 +1269,7 @@ public:
             vector<int> feet;
 
             for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
+                cout << "Dead " << i << ": " << game->get_current_player()->is_foot_dead(i) << '\n';
                 if(!game->get_current_player()->is_foot_dead(i)) {
                     str.clear();
                     ss >> str;
