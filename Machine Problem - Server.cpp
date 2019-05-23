@@ -1252,27 +1252,29 @@ public:
 
             game->tap(player_body_part, player_body_part_number, target_id, target_body_part, target_body_part_number);
         } else if(str == "disthands") {
-            vector<int> hands(game->get_current_player()->get_number_of_hands());
-            fill(hands.begin(), hands.end(), game->get_current_player()->get_max_fingers());
+            vector<int> hands;
 
             for(int i = 0; i < game->get_current_player()->get_number_of_hands(); i++) {
                 if(!game->get_current_player()->is_hand_dead(i)) {
                     str.clear();
                     ss >> str;
-                    hands[i] = atoi(str.c_str());
+                    hands.push_back(atoi(str.c_str()));
+                } else {
+                    hands.push_back(game->get_current_player()->get_max_fingers());
                 }
             }
 
             game->disthands(hands);
         } else if(str == "distfeet") {
-            vector<int> feet(game->get_current_player()->get_number_of_feet());
-            fill(feet.begin(), feet.end(), game->get_current_player()->get_max_toes());
+            vector<int> feet;
 
             for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
                 if(!game->get_current_player()->is_foot_dead(i)) {
                     str.clear();
                     ss >> str;
-                    feet[i] = atoi(str.c_str());
+                    feet.push_back(atoi(str.c_str()));
+                } else {
+                    feet.push_back(game->get_current_player()->get_max_toes());
                 }
             }
 
@@ -1281,8 +1283,6 @@ public:
     }
 
     bool is_valid_command(string &command) {
-        cout << "Command Validation started!" << '\n';
-
         stringstream ss(command);
         string str;
 
@@ -1377,7 +1377,6 @@ public:
             for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
                 if(!game->get_current_player()->is_foot_dead(i)) {
                     if(game->get_current_player()->get_foot_toes(i) != feet[i]) {
-                        cout << "Command Validation successful!" << '\n';
                         return true;
                     }
                 }
