@@ -81,6 +81,7 @@ public:
         vector<string> vec(vec_size);
 
         for(int i = 0; i < vec_size; i++) {
+            cout << "Status: " << i << '\n';
             vec[i] = get_server_string();
         }
 

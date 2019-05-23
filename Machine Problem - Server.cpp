@@ -558,7 +558,7 @@ public:
         string str;
 
         for(unsigned int i = 0; i < players.size(); i++) {
-            str += "P" + to_string(players[i]->get_player_id() + 1) + players[i]->get_player_class()[0] + "T" + to_string(players[i]->get_team_number() + 1) + " ";
+            str += "P" + to_string(players[i]->get_player_id() + 1) + players[i]->get_player_class()[0] + " ";
             str += players[i]->get_player_status();
 
             if(i != players.size() - 1) str += " | ";
@@ -718,15 +718,16 @@ public:
         vector<string> game_status;
 
         for(unsigned int i = 0; i < teams.size(); i++) {
-            string str;
-
             if(teams[i].get_number_of_players() > 0) {
+                string str;
                 str += "Team " + to_string(i + 1) + ": ";
                 str += teams[i].get_team_status();
                 game_status.push_back(str);
             }
         }
 
+        string team_str = "Current Team: " + to_string(current_team + 1);
+        game_status.push_back(team_str);
         string str = "Current Player: " + get_current_player()->get_player_name();
         game_status.push_back(str);
 
@@ -819,16 +820,17 @@ public:
         }
     }
 
-    void send_client(int i, vector<string> vec) {
+    void send_client(int i, vector<string> &vec) {
         int vec_size = vec.size();
         send_client(i, vec_size);
 
         for(int i = 0; i < vec_size; i++) {
+            cout << "Status: " << i << '\n';
             send_client(i, vec[i]);
         }
     }
 
-    void send_all_clients(vector<string> vec) {
+    void send_all_clients(vector<string> &vec) {
         for(unsigned int i = 0; i < current_clients; i++) {
             send_client(i, vec);
         }
