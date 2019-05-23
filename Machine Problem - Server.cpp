@@ -647,7 +647,7 @@ public:
         skipped_players.clear();
 
         while(teams[current_team].is_dead() || !teams[current_team].can_act()) {
-            if(!teams[current_team].can_act()) {
+            if(!teams[current_team].can_act() && !teams[current_team].is_dead()) {
                 teams[current_team].skip();
                 string str = "Team " + to_string(current_team + 1) + " has been skipped.";
                 skipped_teams.push_back(str);
@@ -657,7 +657,7 @@ public:
         }
 
         while(get_current_player()->is_dead() || !get_current_player()->can_act()) {
-            if(!get_current_player()->can_act()) {
+            if(!get_current_player()->can_act() && !get_current_player()->is_dead()) {
                 get_current_player()->skip();
                 string str = "Player " + to_string(get_current_player()->get_player_id() + 1) + " has been skipped.";
                 skipped_players.push_back(str);
