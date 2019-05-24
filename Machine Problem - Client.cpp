@@ -153,26 +153,22 @@ public:
     void input() {
         bool is_turn = client->get_server_bool();
         int actions = client->get_server_int();
+        bool is_game_over = client->get_server_bool();
         
-        if(!is_turn) {
-            string wait_msg = client->get_server_string();
-            cout << wait_msg << '\n';
-        } else {
-            for(int i = 0; i < actions; i++) {
+        for(int i = 0; i < actions && !is_game_over; i++) {
+            if(!is_turn) {
+                string wait_msg = client->get_server_string();
+                cout << wait_msg << '\n';
+            } else {
                 bool is_valid = client->get_server_bool();
                 string command;
+
+                string instruction_msg = client->get_server_string();
+                cout << "Your turn: Type \"help\" for available commands. Input: ";
 
                 while(!is_valid) {
                     getline(cin, command);
                     client->send_server_string(command);
-
-                    if(command == "help") {
-                        vector<string> help_msg = client->get_server_vector_string();
-                        for(unsigned int i = 0; i < help_msg.size(); i++) {
-                            cout << help_msg[i] << '\n';
-                        }
-                        i--;
-                    }
 
                     is_valid = client->get_server_bool();
 
@@ -180,7 +176,18 @@ public:
                         string error_msg = client->get_server_string();
                     }
                 }
+
+                if(command == "help") {
+                    vector<string> help_msg = client->get_server_vector_string();
+
+                    for(unsigned int i = 0; i < help_msg.size(); i++) {
+                        cout << help_msg[i] << '\n';
+                    }
+                }
             }
+
+            i = client->get_server_int();
+            is_game_over = client->get_server_bool();
         }
     }
 

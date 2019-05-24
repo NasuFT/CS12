@@ -1164,8 +1164,9 @@ public:
         }
 
         server->send_all_clients(game->get_current_player()->get_actions_per_turn());
+        server->send_all_clients(game->is_game_over());
         
-        for(int j = 0; j < game->get_current_player()->get_actions_per_turn(); j++) {
+        for(int j = 0; j < game->get_current_player()->get_actions_per_turn() && !game->is_game_over(); j++) {
             string hold_msg = "Waiting for " + game->get_current_player()->get_player_name() + ": Action " + to_string(j + 1) + "...";
 
             if(game->get_current_player()->get_player_id() == 0) {
@@ -1180,6 +1181,8 @@ public:
             string command = ask_current_player_command(game->get_current_player()->get_player_id(), j);
             execute_command(command, j);
             if(command == "help") j--;
+            server->send_all_clients(j);
+            server->send_all_clients(game->is_game_over());
         }
     }
 
@@ -1267,6 +1270,8 @@ public:
 
             game->distfeet(feet);
         } else if(str == "help") {
+            int player_id = game->get_current_player()->get_player_id();
+
             vector<string> command_msg(5);
             command_msg[0] = "Your turn: Please choose from the following actions: ";
             command_msg[1] = "--- tap H/F[body_letter] [target_player] H/F[target_body_letter]: e.g. \"tap HA 2 FB\"";
@@ -1274,12 +1279,12 @@ public:
             command_msg[3] = "--- distfeet [feet_1_toes] [feet_2_toes] ...: e.g. \"distfeet 1 3 1\"";
             command_msg[4] = "Input: (Action " + to_string(action_number + 1) + "): ";
 
-            if(game->get_current_player()->get_player_id() == 0) {
+            if(player_id == 0) {
                 for(int i = 0; i < 5; i++) {
                     cout << command_msg[i] << '\n';
                 }
             } else {
-                server->send_client(game->get_current_player()->get_player_id() - 1, command_msg);
+                server->send_client(player_id - 1, command_msg);
             }
         }
     }
