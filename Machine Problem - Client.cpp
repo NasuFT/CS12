@@ -164,7 +164,7 @@ public:
                 string command;
 
                 string instruction_msg = client->get_server_string();
-                cout << "Your turn: Type \"help\" for available commands. Input: ";
+                cout << instruction_msg;
 
                 while(!is_valid) {
                     getline(cin, command);

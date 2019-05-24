@@ -1191,6 +1191,10 @@ public:
 
         if(player_id != 0) server->send_client(player_id - 1, is_valid_command(command));
 
+        string instruction_msg = "Your turn: Type \"help\" for available commands. Input: ";
+        if(player_id == 0) cout << instruction_msg;
+        else server->send_client(player_id - 1, instruction_msg);
+
         while(!is_valid_command(command)) {
             if(player_id == 0) {
                 getline(cin, command);
