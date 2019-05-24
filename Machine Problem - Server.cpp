@@ -1457,5 +1457,11 @@ void execute_server(string port) {
 }
 
 int main(int argc, char *argv[]) {
+    if(argc != 2) {
+        string launch_err_msg = "Invalid number of arguments! Please enter a port (Range: " + to_string(Constants::min_port) + "-" + to_string(Constants::max_port) + ")";
+
+        cout << launch_err_msg << '\n';
+        throw invalid_argument(launch_err_msg);
+    }
     execute_server(argv[1]);
 }

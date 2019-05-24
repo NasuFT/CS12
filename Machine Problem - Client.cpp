@@ -338,5 +338,11 @@ void execute_client(string server_ip_address, string server_port) {
 }
 
 int main(int argc, char *argv[]) {
+    if(argc != 3) {
+        string launch_error_msg = "Invalid number of arguments! Please enter an IP address and a port (Port Range: " + to_string(Constants::min_port) + "-" + to_string(Constants::max_port) + ")";
+        cout << launch_error_msg << '\n';
+        throw invalid_argument(launch_error_msg);
+    }
+
     execute_client(argv[1], argv[2]);
 }
