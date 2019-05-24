@@ -432,7 +432,8 @@ public:
 
         str += ":";
 
-        if(!can_act()) str += "skip";
+        if(is_dead()) str += "dead";
+        else if(!can_act()) str += "skip";
 
         str += ")";
 
@@ -1154,6 +1155,16 @@ public:
                 return team_number - 1;
             }
         }
+
+        int active_teams = 0;
+
+        for(int team_number = max_team_number; team_number > 1; team_number--) {
+            if(find(team_numbers.begin(), team_numbers.end(), team_number) != team_numbers.end()) {
+                active_teams++;
+            }
+        }
+
+        if(active_teams < 2) return 2;
 
         return -1;
     }
