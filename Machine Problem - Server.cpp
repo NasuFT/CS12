@@ -793,7 +793,7 @@ public:
             string join_msg = "You have joined the game as: Player " + to_string(i + 2);
             send_client(i, join_msg);
             send_client(i, connections - i - 1);
-            send_client(i, client_ids[client_ids.size() - 1]);
+            send_client(i, i);
         }
 
         string all_connected = "All players connected!";
@@ -1202,7 +1202,7 @@ public:
             } else {
                 cout << hold_msg << '\n';
                 for(int k = 0; k < server->get_number_of_clients(); k++) {
-                    if(j != k) server->send_client(k, hold_msg);
+                    if(game->get_current_player()->get_player_id() != k + 1) server->send_client(k, hold_msg);
                 }
             }
 
