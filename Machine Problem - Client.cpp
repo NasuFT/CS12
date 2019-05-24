@@ -260,7 +260,7 @@ public:
                     team_number = ask_player_team_number();
                 } else {
                     wait_msg = client->get_server_string();
-                    cout << wait_msg;
+                    cout << wait_msg << '\n';
                 }
             }
 
