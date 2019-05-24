@@ -1417,7 +1417,7 @@ public:
                 str.clear();
                 ss >> str;
                 if(str == "") break;
-                if(is_number(str) && 0 < atoi(str.c_str()) && atoi(str.c_str()) < game->get_current_player()->get_max_toes()) {
+                if(is_number(str) && 0 <= atoi(str.c_str()) && atoi(str.c_str()) < game->get_current_player()->get_max_toes()) {
                     feet.push_back(atoi(str.c_str()));
                 } else {
                     return false;
