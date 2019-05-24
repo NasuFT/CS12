@@ -162,15 +162,17 @@ public:
                 bool is_valid = client->get_server_bool();
                 string command;
 
-                vector<string> instruction_msg = client->get_server_vector_string();
-
-                for(unsigned int i = 0; i < instruction_msg.size(); i++) {
-                    cout << instruction_msg[i] << '\n';
-                }
-
                 while(!is_valid) {
                     getline(cin, command);
                     client->send_server_string(command);
+
+                    if(command == "help") {
+                        vector<string> help_msg = client->get_server_vector_string();
+                        for(unsigned int i = 0; i < help_msg.size(); i++) {
+                            cout << help_msg[i] << '\n';
+                        }
+                        i--;
+                    }
 
                     is_valid = client->get_server_bool();
 

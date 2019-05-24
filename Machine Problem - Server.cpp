@@ -1178,7 +1178,8 @@ public:
             }
 
             string command = ask_current_player_command(game->get_current_player()->get_player_id(), j);
-            execute_command(command);
+            execute_command(command, j);
+            if(command == "help") j--;
         }
     }
 
@@ -1186,20 +1187,6 @@ public:
         string command;
 
         if(player_id != 0) server->send_client(player_id - 1, is_valid_command(command));
-        vector<string> command_msg(5);
-        command_msg[0] = "Your turn: Please choose from the following actions: ";
-        command_msg[1] = "--- tap H/F[body_letter] [target_player] H/F[target_body_letter]: e.g. \"tap HA 2 FB\"";
-        command_msg[2] = "--- disthands [hand_1_fingers] [hand_2_fingers] ...: e.g. \"disthands 3 2 3\"";
-        command_msg[3] = "--- distfeet [feet_1_toes] [feet_2_toes] ...: e.g. \"distfeet 1 3 1\"";
-        command_msg[4] = "Input: (Action " + to_string(action_number + 1) + "): ";
-
-        if(player_id == 0) {
-            for(int i = 0; i < 5; i++) {
-                cout << command_msg[i] << '\n';
-            }
-        } else {
-            server->send_client(player_id - 1, command_msg);
-        }
 
         while(!is_valid_command(command)) {
             if(player_id == 0) {
@@ -1220,7 +1207,7 @@ public:
         return command;
     }
 
-    void execute_command(string &command) {
+    void execute_command(string &command, int action_number) {
         string str;
         stringstream ss(command);
         ss >> str;
@@ -1279,6 +1266,21 @@ public:
             }
 
             game->distfeet(feet);
+        } else if(str == "help") {
+            vector<string> command_msg(5);
+            command_msg[0] = "Your turn: Please choose from the following actions: ";
+            command_msg[1] = "--- tap H/F[body_letter] [target_player] H/F[target_body_letter]: e.g. \"tap HA 2 FB\"";
+            command_msg[2] = "--- disthands [hand_1_fingers] [hand_2_fingers] ...: e.g. \"disthands 3 2 3\"";
+            command_msg[3] = "--- distfeet [feet_1_toes] [feet_2_toes] ...: e.g. \"distfeet 1 3 1\"";
+            command_msg[4] = "Input: (Action " + to_string(action_number + 1) + "): ";
+
+            if(game->get_current_player()->get_player_id() == 0) {
+                for(int i = 0; i < 5; i++) {
+                    cout << command_msg[i] << '\n';
+                }
+            } else {
+                server->send_client(game->get_current_player()->get_player_id() - 1, command_msg);
+            }
         }
     }
 
@@ -1383,7 +1385,7 @@ public:
             }
 
             return false;
-        }
+        } else if(str == "help") return true;
 
         return false;
     }
