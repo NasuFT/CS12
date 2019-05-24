@@ -1386,14 +1386,6 @@ public:
 
             if(hands.size() != game->get_current_player()->get_alive_hands()) return false;
 
-            for(int i = 0; i < game->get_current_player()->get_number_of_hands(); i++) {
-                if(!game->get_current_player()->is_hand_dead(i)) {
-                    if(game->get_current_player()->get_hand_fingers(i) != hands[i]) {
-                        return true;
-                    }
-                }
-            }
-
             vector<int> current_hands;
 
             for(int i = 0; i < game->get_current_player()->get_number_of_hands(); i++) {
@@ -1403,6 +1395,14 @@ public:
             }
 
             if(get_sum(current_hands) != get_sum(hands)) return false;
+
+            for(int i = 0; i < game->get_current_player()->get_number_of_hands(); i++) {
+                if(!game->get_current_player()->is_hand_dead(i)) {
+                    if(game->get_current_player()->get_hand_fingers(i) != hands[i]) {
+                        return true;
+                    }
+                }
+            }
 
             return false;
         } else if(str == "distfeet") {
@@ -1422,14 +1422,6 @@ public:
 
             if(feet.size() != game->get_current_player()->get_alive_feet()) return false;
 
-            for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
-                if(!game->get_current_player()->is_foot_dead(i)) {
-                    if(game->get_current_player()->get_foot_toes(i) != feet[i]) {
-                        return true;
-                    }
-                }
-            }
-
             vector<int> current_feet;
 
             for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
@@ -1439,6 +1431,14 @@ public:
             }
 
             if(get_sum(current_feet) != get_sum(feet)) return false;
+
+            for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
+                if(!game->get_current_player()->is_foot_dead(i)) {
+                    if(game->get_current_player()->get_foot_toes(i) != feet[i]) {
+                        return true;
+                    }
+                }
+            }
 
             return false;
         } else if(str == "help") return true;
