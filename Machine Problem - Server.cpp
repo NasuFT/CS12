@@ -993,7 +993,7 @@ public:
         server->wait_connections(number_of_players - 1);
         server->send_all_clients(number_of_players);
         server->send_all_clients(number_of_teams);
-        string str = "";
+        str = "";
         server->send_all_clients(str);
         cout << str << '\n';
     }
