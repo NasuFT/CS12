@@ -222,6 +222,8 @@ public:
 
         number_of_players = client->get_server_int();
         number_of_teams = client->get_server_int();
+        string str = client->get_server_string();
+        cout << str << '\n';
     }
 
     void initialize_game() {
@@ -281,8 +283,13 @@ public:
             client->send_server_string(team_number);
             is_valid = client->get_server_bool();
             if(!is_valid) {
-                string invalid_team_number_msg = client->get_server_string();
-                cout << invalid_team_number_msg << '\n';
+                vector<string> invalid_team_number_msg = client->get_server_vector_string();
+                
+                for(unsigned int i = 0; i < invalid_team_number_msg.size(); i++) {
+                    cout << invalid_team_number_msg[i];
+
+                    if(i != invalid_team_number_msg.size() - 1) cout << '\n';
+                }
             }
         }
 
@@ -301,8 +308,13 @@ public:
 
             is_valid = client->get_server_bool();
             if(!is_valid) {
-                string error_msg = client->get_server_string();
-                cout << error_msg << '\n';
+                vector<string> error_msg = client->get_server_vector_string();
+                
+                for(unsigned int i = 0; i < error_msg.size(); i++) {
+                    cout << error_msg[i];
+
+                    if(i != error_msg.size() - 1) cout << '\n';
+                }
             }
         }
 

@@ -992,6 +992,9 @@ public:
         server->wait_connections(number_of_players - 1);
         server->send_all_clients(number_of_players);
         server->send_all_clients(number_of_teams);
+        string str = "";
+        server->send_all_clients(str);
+        cout << str << '\n';
     }
 
     void initialize_game() {
@@ -1013,13 +1016,13 @@ public:
 
         string player_class;
 
-        cout << "Choose[type] your preferred player class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
+        cout << "Choose[type] your class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
         while(!is_valid_player_class(player_class)) {
             getline(cin, player_class);
 
             if(!is_valid_player_class(player_class)) {
                 cout << "Invalid player class!\n";
-                cout << "Choose[type] your preferred player class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
+                cout << "Choose[type] your class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
             }
         }
 
@@ -1035,7 +1038,7 @@ public:
                 }
             }
 
-            string msg = "Choose[type] your preferred player class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
+            string msg = "Choose[type] your class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
 
             server->send_client(i, is_valid_player_class(player_class));
             server->send_client(i, msg);
@@ -1045,7 +1048,9 @@ public:
 
                 server->send_client(i, is_valid_player_class(player_class));
                 if(!is_valid_player_class(player_class)) {
-                    string invalid_player_class_msg = "Invalid player class! Please choose among: \"human\", \"alien\", \"zombie\", \"doggo\": ";
+                    vector<string> invalid_player_class_msg(2);
+                    invalid_player_class_msg[0] = "Invalid player class!";
+                    invalid_player_class_msg[1] = "Choose[type] your class: \"human\", \"alien\", \"zombie\", \"doggo\": ";
                     server->send_client(i, invalid_player_class_msg);
                 }
             }
@@ -1067,13 +1072,13 @@ public:
 
             string team_number;
 
-            cout << "Choose[type] your preferred team number: (1-" << to_string(number_of_teams) << "): ";
+            cout << "Choose[type] your team number: (1-" << to_string(number_of_teams) << "): ";
             while(!is_valid_team_number(team_number)) {
                 getline(cin, team_number);
 
                 if(!is_valid_team_number(team_number)) {
                     cout << "Invalid team number!\n";
-                    cout << "Choose[type] your preferred team number: (1-" << to_string(number_of_teams) << "): ";
+                    cout << "Choose[type] your team number: (1-" << to_string(number_of_teams) << "): ";
                 }
             }
 
@@ -1089,7 +1094,7 @@ public:
                     }
                 }
 
-                string msg = "Choose[type] your preferred team number: (1-" + to_string(number_of_teams) +"): ";
+                string msg = "Choose[type] your team number: (1-" + to_string(number_of_teams) +"): ";
 
                 server->send_client(i, is_valid_team_number(team_number));
                 server->send_client(i, msg);
@@ -1099,7 +1104,9 @@ public:
 
                     server->send_client(i, is_valid_team_number(team_number));
                     if(!is_valid_team_number(team_number)) {
-                        string invalid_team_number_msg = "Invalid team number! Please choose among: (1-" + to_string(number_of_teams) + "): ";
+                        vector<string> invalid_team_number_msg(2);
+                        invalid_team_number_msg[0] = "Invalid team number";
+                        invalid_team_number_msg[1] = "Choose[type] your team number: (1-" + to_string(number_of_teams) +"): ";
                         server->send_client(i, invalid_team_number_msg);
                     }
                 }
