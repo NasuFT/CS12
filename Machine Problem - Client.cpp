@@ -174,6 +174,7 @@ public:
 
                     if(!is_valid) {
                         string error_msg = client->get_server_string();
+                        cout << error_msg << '\n';
                     }
                 }
 
