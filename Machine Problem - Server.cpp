@@ -575,7 +575,11 @@ public:
             if(i != players.size() - 1) str += " | ";
         }
 
-        str += " | Next Player: " + telegraph_next_player();
+        if(!is_dead()) {
+            str += " | Next Player: " + telegraph_next_player();
+        } else {
+            str += " | Dead";
+        }
 
         return str;
     }
