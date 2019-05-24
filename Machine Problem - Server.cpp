@@ -147,6 +147,16 @@ bool is_number(string &str) {
     return true;
 }
 
+int get_sum(vector<int> &vec) {
+    int sum = 0;
+
+    for(unsigned int i = 0; i < vec.size(); i++) {
+        sum += vec[i];
+    }
+
+    return sum;
+}
+
 
 
 /// ----- BODY PARTS ----- ///
@@ -564,7 +574,7 @@ public:
             if(i != players.size() - 1) str += " | ";
         }
 
-        str += " Next Player: " + telegraph_next_player();
+        str += " | Next Player: " + telegraph_next_player();
 
         return str;
     }
@@ -1276,15 +1286,14 @@ public:
         } else if(str == "help") {
             int player_id = game->get_current_player()->get_player_id();
 
-            vector<string> command_msg(5);
-            command_msg[0] = "Your turn: Please choose from the following actions: ";
+            vector<string> command_msg(4);
+            command_msg[0] = "Please choose from the following actions: ";
             command_msg[1] = "--- tap H/F[body_letter] [target_player] H/F[target_body_letter]: e.g. \"tap HA 2 FB\"";
             command_msg[2] = "--- disthands [hand_1_fingers] [hand_2_fingers] ...: e.g. \"disthands 3 2 3\"";
             command_msg[3] = "--- distfeet [feet_1_toes] [feet_2_toes] ...: e.g. \"distfeet 1 3 1\"";
-            command_msg[4] = "Input: (Action " + to_string(action_number + 1) + "): ";
 
             if(player_id == 0) {
-                for(int i = 0; i < 5; i++) {
+                for(int i = 0; i < 4; i++) {
                     cout << command_msg[i] << '\n';
                 }
             } else {
@@ -1367,6 +1376,16 @@ public:
                 }
             }
 
+            vector<int> current_hands;
+
+            for(int i = 0; i < game->get_current_player()->get_number_of_hands(); i++) {
+                if(!game->get_current_player()->is_hand_dead(i)) {
+                    current_hands.push_back(game->get_current_player()->get_hand_fingers(i));
+                }
+            }
+
+            if(get_sum(current_hands) != get_sum(hands)) return false;
+
             return false;
         } else if(str == "distfeet") {
             if(game->get_current_player()->get_alive_feet() <= 1) return false;
@@ -1392,6 +1411,16 @@ public:
                     }
                 }
             }
+
+            vector<int> current_feet;
+
+            for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
+                if(!game->get_current_player()->is_foot_dead(i)) {
+                    current_feet.push_back(game->get_current_player()->get_foot_toes(i));
+                }
+            }
+
+            if(get_sum(current_feet) != get_sum(feet)) return false;
 
             return false;
         } else if(str == "help") return true;
