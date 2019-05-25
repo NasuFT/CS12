@@ -688,6 +688,8 @@ public:
         for(unsigned int i = 0; i < teams.size(); i++) {
             if(teams[i].get_number_of_players() > 0) active_teams++;
         }
+
+        return active_teams;
     }
 
     vector<string> &get_skipped_players_msg() {
