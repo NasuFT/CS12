@@ -1009,6 +1009,8 @@ public:
         vector<int> team_numbers = ask_players_team_numbers();
 
         process_data(player_classes, team_numbers);
+        number_of_teams = *max_element(team_numbers.begin(), team_numbers.end());
+        server->send_all_clients(number_of_teams);
 
         string start_game_msg = Constants::start_game_msg;
         cout << start_game_msg << '\n';
