@@ -1246,7 +1246,7 @@ public:
             if(player_id != 0) server->send_client(player_id - 1, is_valid_command(command));
 
             if(!is_valid_command(command)) {
-                string error_msg = "Invalid command! Please try again: ";
+                string error_msg = get_error_msg(command) + " Please try again: ";
                 if(player_id == 0) cout << error_msg;
                 else server->send_client(player_id - 1, error_msg);
             }
@@ -1331,6 +1331,131 @@ public:
                 server->send_client(player_id - 1, command_msg);
             }
         }
+    }
+
+    string get_error_msg(string &command) {
+        stringstream ss(command);
+        string str;
+
+        ss >> str;
+        
+        if(str == "tap") {
+            str.clear();
+            ss >> str;
+            if(str.length() != 2) return "Invalid Player Argument!";
+
+            if(str[0] != 'H' && str[0] != 'F') return "Invalid Body Part!";
+            int body_number = str[1] - 'A';
+            if(str[0] == 'H') {
+                if(!(0 <= body_number && body_number < game->get_current_player()->get_number_of_hands() && !game->get_current_player()->is_hand_dead(body_number))) {
+                    return "Invalid Hand! Hand may be non-existent or dead.";
+                }
+            } else if(str[0] == 'F') {
+                if(!(0 <= body_number && body_number < game->get_current_player()->get_number_of_feet() && !game->get_current_player()->is_foot_dead(body_number))) {
+                    return "Invalid Foot! Foot may be non-existent or dead.";
+                }
+            }
+
+            str.clear();
+            ss >> str;
+            if(!(is_number(str) && 0 < atoi(str.c_str()) && atoi(str.c_str()) <= number_of_players && game->get_current_player()->get_team_number() != game->get_player(atoi(str.c_str()) - 1)->get_team_number() && !game->get_player(atoi(str.c_str()) - 1)->is_dead())) {
+                return "Target not found!";
+            }
+            int target_id = atoi(str.c_str()) - 1;
+
+            str.clear();
+            ss >> str;
+            if(str.length() != 2) return "Invalid Target Player Argument!";
+            if(str[0] != 'H' && str[0] != 'F') return "Invalid Target Body Part!";
+            body_number = str[1] - 'A';
+            if(str[0] == 'H') {
+                if(!(0 <= body_number && body_number < game->get_player(target_id)->get_number_of_hands() && !game->get_player(target_id)->is_hand_dead(body_number))) {
+                    return "Invalid Hand! Hand may be non-existent or dead.";
+                }
+            } else if(str[0] == 'F') {
+                if(!(0 <= body_number && body_number < game->get_player(target_id)->get_number_of_feet() && !game->get_player(target_id)->is_foot_dead(body_number))) {
+                    return "Invalid Foot! Foot may be non-existent or dead.";
+                }
+            }
+
+            str.clear();
+            ss >> str;
+            if(str != "") return "Invalid number of Arguments";
+        } else if(str == "disthands") {
+            if(game->get_current_player()->get_alive_hands() <= 1) return "One hand remaining! Cannot distribute!";
+            vector<int> hands;
+
+            while(ss) {
+                str.clear();
+                ss >> str;
+                if(str == "") break;
+                if(is_number(str) && 0 <= atoi(str.c_str()) && atoi(str.c_str()) < game->get_current_player()->get_max_fingers()) {
+                    hands.push_back(atoi(str.c_str()));
+                } else {
+                    return "Invalid number of fingers: Range: (0 - " + to_string(game->get_current_player()->get_max_fingers()) + ")";
+                }
+            }
+
+            if(hands.size() != game->get_current_player()->get_alive_hands()) return "Number of arguments not equal to player's hands alive!";
+
+            vector<int> current_hands;
+
+            for(int i = 0; i < game->get_current_player()->get_number_of_hands(); i++) {
+                if(!game->get_current_player()->is_hand_dead(i)) {
+                    current_hands.push_back(game->get_current_player()->get_hand_fingers(i));
+                }
+            }
+
+            if(get_sum(current_hands) != get_sum(hands)) return "Sum of hands not equal to current hands!";
+
+            for(int i = 0; i < game->get_current_player()->get_number_of_hands(); i++) {
+                if(!game->get_current_player()->is_hand_dead(i)) {
+                    if(game->get_current_player()->get_hand_fingers(i) != hands[i]) {
+                        
+                    }
+                }
+            }
+
+            return "No change detected!";
+        } else if(str == "distfeet") {
+            if(game->get_current_player()->get_alive_feet() <= 1) return "One foot remaining! Cannot distribute!";
+            vector<int> feet;
+
+            while(ss) {
+                str.clear();
+                ss >> str;
+                if(str == "") break;
+                if(is_number(str) && 0 <= atoi(str.c_str()) && atoi(str.c_str()) < game->get_current_player()->get_max_toes()) {
+                    feet.push_back(atoi(str.c_str()));
+                } else {
+                    return "Invalid number of toes! Range: (0 - " + to_string(game->get_current_player()->get_max_toes());
+                }
+            }
+
+            if(feet.size() != game->get_current_player()->get_alive_feet()) return "Number of arguments not equal to player's feet remaining!";
+
+            vector<int> current_feet;
+
+            for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
+                if(!game->get_current_player()->is_foot_dead(i)) {
+                    current_feet.push_back(game->get_current_player()->get_foot_toes(i));
+                }
+            }
+
+            if(get_sum(current_feet) != get_sum(feet)) return "Sum of feet not equal to current feet!";
+
+            for(int i = 0; i < game->get_current_player()->get_number_of_feet(); i++) {
+                if(!game->get_current_player()->is_foot_dead(i)) {
+                    if(game->get_current_player()->get_foot_toes(i) != feet[i]) {
+
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        return "No change detected!";
     }
 
     bool is_valid_command(string &command) {
