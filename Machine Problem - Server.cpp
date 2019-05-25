@@ -1358,7 +1358,7 @@ public:
 
             str.clear();
             ss >> str;
-            if(!(is_number(str) && 0 < atoi(str.c_str()) && atoi(str.c_str()) <= number_of_players && game->get_current_player()->get_team_number() != game->get_player(atoi(str.c_str()) - 1)->get_team_number() && !game->get_player(atoi(str.c_str()) - 1)->is_dead())) {
+            if(!(is_number(str) && 0 < atoi(str.c_str()) && atoi(str.c_str()) <= number_of_players)) {
                 return "Target not found!";
             }
             if(game->get_current_player()->get_team_number() == game->get_player(atoi(str.c_str()) - 1)->get_team_number()) {
@@ -1398,7 +1398,7 @@ public:
                 if(is_number(str) && 0 <= atoi(str.c_str()) && atoi(str.c_str()) < game->get_current_player()->get_max_fingers()) {
                     hands.push_back(atoi(str.c_str()));
                 } else {
-                    return "Invalid number of fingers: Range: (0 - " + to_string(game->get_current_player()->get_max_fingers()) + ")";
+                    return "Invalid number of fingers: Range: (0 - " + to_string(game->get_current_player()->get_max_fingers() - 1) + ")";
                 }
             }
 
@@ -1434,7 +1434,7 @@ public:
                 if(is_number(str) && 0 <= atoi(str.c_str()) && atoi(str.c_str()) < game->get_current_player()->get_max_toes()) {
                     feet.push_back(atoi(str.c_str()));
                 } else {
-                    return "Invalid number of toes! Range: (0 - " + to_string(game->get_current_player()->get_max_toes()) + ")!";
+                    return "Invalid number of toes! Range: (0 - " + to_string(game->get_current_player()->get_max_toes() - 1) + ")!";
                 }
             }
 
