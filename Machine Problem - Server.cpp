@@ -1428,7 +1428,7 @@ public:
                 if(is_number(str) && 0 <= atoi(str.c_str()) && atoi(str.c_str()) < game->get_current_player()->get_max_toes()) {
                     feet.push_back(atoi(str.c_str()));
                 } else {
-                    return "Invalid number of toes! Range: (0 - " + to_string(game->get_current_player()->get_max_toes());
+                    return "Invalid number of toes! Range: (0 - " + to_string(game->get_current_player()->get_max_toes()) + ")!";
                 }
             }
 
