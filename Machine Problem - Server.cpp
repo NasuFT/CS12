@@ -1214,7 +1214,12 @@ public:
 
             string command = ask_current_player_command(game->get_current_player()->get_player_id(), j);
             execute_command(command, j);
-            if(command == "help") j--;
+
+            stringstream ss(command);
+            string str;
+            ss >> str;
+            if(str == "help") j--;
+            
             server->send_all_clients(j);
             server->send_all_clients(game->is_game_over());
         }
