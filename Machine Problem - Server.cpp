@@ -1361,6 +1361,12 @@ public:
             if(!(is_number(str) && 0 < atoi(str.c_str()) && atoi(str.c_str()) <= number_of_players && game->get_current_player()->get_team_number() != game->get_player(atoi(str.c_str()) - 1)->get_team_number() && !game->get_player(atoi(str.c_str()) - 1)->is_dead())) {
                 return "Target not found!";
             }
+            if(game->get_current_player()->get_team_number() == game->get_player(atoi(str.c_str()) - 1)->get_team_number()) {
+                return "Friendly Fire off!";
+            }
+            if(game->get_player(atoi(str.c_str()) - 1)->is_dead()) {
+                return "Target Player dead!";
+            }
             int target_id = atoi(str.c_str()) - 1;
 
             str.clear();
