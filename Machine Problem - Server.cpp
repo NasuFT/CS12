@@ -1452,10 +1452,10 @@ public:
                 }
             }
 
-            return false;
+            return "No change detected!";
         }
 
-        return "No change detected!";
+        return "Invalid command!";
     }
 
     bool is_valid_command(string &command) {
