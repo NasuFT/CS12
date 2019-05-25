@@ -230,9 +230,9 @@ public:
     void initialize_game() {
         ask_players_player_class();
         ask_players_team_number();
+        number_of_teams = client->get_server_int();
         string start_game_msg = client->get_server_string();
         cout << start_game_msg << '\n';
-        number_of_teams = client->get_server_int();
     }
 
     void ask_players_player_class() {
