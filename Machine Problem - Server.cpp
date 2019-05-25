@@ -1370,11 +1370,11 @@ public:
             body_number = str[1] - 'A';
             if(str[0] == 'H') {
                 if(!(0 <= body_number && body_number < game->get_player(target_id)->get_number_of_hands() && !game->get_player(target_id)->is_hand_dead(body_number))) {
-                    return "Invalid Hand! Hand may be non-existent or dead.";
+                    return "Invalid Hand! Target Hand may be non-existent or dead.";
                 }
             } else if(str[0] == 'F') {
                 if(!(0 <= body_number && body_number < game->get_player(target_id)->get_number_of_feet() && !game->get_player(target_id)->is_foot_dead(body_number))) {
-                    return "Invalid Foot! Foot may be non-existent or dead.";
+                    return "Invalid Foot! Target Foot may be non-existent or dead.";
                 }
             }
 
