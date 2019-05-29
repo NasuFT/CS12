@@ -4,49 +4,53 @@
 using namespace std;
 
 struct Counter {
-    int x;
-    int o;
-    int draw;
+    int x, o, draw;
 
-    Counter() {
-        x = 0;
-        o = 0;
-        draw = 0;
+    Counter(): x(0), o(0), draw(0) {
+
     }
 };
 
 bool isWinner(string &state, char player) {
-    if(state[0] == state[3] && state[3] == state[6] && state[0] == player) return true;
-    if(state[1] == state[4] && state[4] == state[7] && state[1] == player) return true;
-    if(state[2] == state[5] && state[5] == state[8] && state[2] == player) return true;
-    if(state[0] == state[1] && state[1] == state[2] && state[0] == player) return true;
-    if(state[3] == state[4] && state[4] == state[5] && state[3] == player) return true;
-    if(state[6] == state[7] && state[7] == state[8] && state[6] == player) return true;
-    if(state[0] == state[4] && state[4] == state[8] && state[0] == player) return true;
-    if(state[2] == state[4] && state[4] == state[6] && state[2] == player) return true;
+    if(state[0] == player && state[1] == player && state[2] == player) return true;    
+    if(state[3] == player && state[4] == player && state[5] == player) return true;
+    if(state[6] == player && state[7] == player && state[8] == player) return true;
+    if(state[0] == player && state[3] == player && state[6] == player) return true;
+    if(state[1] == player && state[4] == player && state[7] == player) return true;
+    if(state[2] == player && state[5] == player && state[8] == player) return true;
+    if(state[0] == player && state[4] == player && state[8] == player) return true;
+    if(state[2] == player && state[4] == player && state[6] == player) return true;
 
     return false;
 }
 
-bool isOutOfMoves(string &state) {
-    return state.find('_') == string::npos;
+bool isGameDraw(string &state) {
+    return (state.find('_') == string::npos);
 }
 
 Counter count(string state, char player) {
     Counter counter;
 
+    for(int i = 0; i < 9; i++) {
+        if(state[i] == 'x') state[i] = 'X';
+        if(state[i] == 'o') state[i] = 'O';
+    }
+
+    if(player == 'x') player = 'X';
+    if(player == 'o') player = 'O';
+
     if(isWinner(state, 'X')) {
-        counter.x = 1;
+        counter.x++;
         return counter;
     }
 
     if(isWinner(state, 'O')) {
-        counter.o = 1;
+        counter.o++;
         return counter;
     }
 
-    if(isOutOfMoves(state)) {
-        counter.draw = 1;
+    if(isGameDraw(state)) {
+        counter.draw++;
         return counter;
     }
 
@@ -54,26 +58,19 @@ Counter count(string state, char player) {
         if(state[i] == '_') {
             string new_state = state;
             new_state[i] = player;
-
-            Counter new_counter = count(new_state, (player == 'X') ? 'O' : 'X');
-            counter.o += new_counter.o;
+            char new_player = (player == 'X' ? 'O' : 'X');
+            Counter new_counter = count(new_state, new_player);
             counter.x += new_counter.x;
+            counter.o += new_counter.o;
             counter.draw += new_counter.draw;
         }
-    }
+    } 
 
     return counter;
 }
 
-void print_counter(Counter &counter) {
-    cout << "X WINS: " << counter.x << '\n';
-    cout << "O WINS: " << counter.o << '\n';
-    cout << "DRAWS: " << counter.draw << '\n';
-    cout << "TOTAL: " << counter.x + counter.o + counter.draw << '\n';
-}
-
 int main() {
-    string str = "_________";
-    Counter counter = count(str, 'X');
-    print_counter(counter);
+    string state = "_________";
+    Counter counter = count(state, 'O');
+    cout << counter.x << ' ' << counter.o << ' ' << counter.draw << ' ' << counter.o + counter.x + counter.draw;
 }
